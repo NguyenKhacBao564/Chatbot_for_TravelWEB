@@ -1,8 +1,12 @@
 import json
+import logging
+
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
-import pickle
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_faiss_index(input_file='data/processed/faq_cleaned.json', index_file="faq_index.faiss", metadata_file="faq_metadata.json"):
@@ -29,7 +33,7 @@ def create_faiss_index(input_file='data/processed/faq_cleaned.json', index_file=
 
     # Save the Faiss index
     faiss.write_index(index, index_file)
-    print(f"Index saved to {index_file}")
+    logger.info("Index saved to %s", index_file)
 
     #save to metadata
     metadata = [{"index": i, "question": item["question"], "answer": item["answer"], "tags": item["tags"]}
@@ -38,7 +42,8 @@ def create_faiss_index(input_file='data/processed/faq_cleaned.json', index_file=
     with open(metadata_file, "w", encoding="utf-8") as f:
         json.dump(metadata, f, ensure_ascii=False, indent=2)
 
-    print(f"Saved metadata to {metadata_file}")
+    logger.info("Saved metadata to %s", metadata_file)
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     create_faiss_index()

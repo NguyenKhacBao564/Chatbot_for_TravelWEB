@@ -1,0 +1,18 @@
+from extractors.extract_price import extract_price_values, extract_price_vn
+
+
+def test_extract_price_million_budget():
+    assert extract_price_vn("Tôi muốn đi Đà Lạt khoảng 5 triệu") == "5000000"
+
+
+def test_extract_price_half_million():
+    assert extract_price_vn("Tour tầm 2 triệu rưỡi có không?") == "2500000"
+
+
+def test_extract_price_range_values():
+    assert extract_price_values("Tìm tour từ 3 triệu đến 5 triệu") == [3000000, 5000000]
+
+
+def test_extract_price_short_units():
+    assert extract_price_vn("Tour 1500k đi đâu được?") == "1500000"
+

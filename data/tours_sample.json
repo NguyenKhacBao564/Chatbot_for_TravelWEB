@@ -1,0 +1,74 @@
+[
+  {
+    "id": "tour_dalat_001",
+    "name": "Đà Lạt 3N2Đ săn mây và khám phá Langbiang",
+    "destination": "Đà Lạt",
+    "destination_normalized": "da-lat",
+    "departure_date": "2026-12-12",
+    "price": 4590000,
+    "url": "/tour/tour_dalat_001",
+    "duration_days": 3,
+    "rating": 4.7,
+    "popularity": 92
+  },
+  {
+    "id": "tour_dalat_002",
+    "name": "Đà Lạt 4N3Đ nghỉ dưỡng và tham quan ngoại ô",
+    "destination": "Đà Lạt",
+    "destination_normalized": "da-lat",
+    "departure_date": "2026-12-20",
+    "price": 4990000,
+    "url": "/tour/tour_dalat_002",
+    "duration_days": 4,
+    "rating": 4.5,
+    "popularity": 81
+  },
+  {
+    "id": "tour_dalat_003",
+    "name": "Đà Lạt cuối tuần tiết kiệm",
+    "destination": "Đà Lạt",
+    "destination_normalized": "da-lat",
+    "departure_date": "2026-11-28",
+    "price": 3890000,
+    "url": "/tour/tour_dalat_003",
+    "duration_days": 2,
+    "rating": 4.3,
+    "popularity": 70
+  },
+  {
+    "id": "tour_phuquoc_001",
+    "name": "Phú Quốc 3N2Đ biển đảo và Grand World",
+    "destination": "Phú Quốc",
+    "destination_normalized": "phu-quoc",
+    "departure_date": "2026-12-15",
+    "price": 5290000,
+    "url": "/tour/tour_phuquoc_001",
+    "duration_days": 3,
+    "rating": 4.6,
+    "popularity": 88
+  },
+  {
+    "id": "tour_danang_001",
+    "name": "Đà Nẵng - Hội An 4N3Đ",
+    "destination": "Đà Nẵng",
+    "destination_normalized": "da-nang",
+    "departure_date": "2026-07-10",
+    "price": 4890000,
+    "url": "/tour/tour_danang_001",
+    "duration_days": 4,
+    "rating": 4.4,
+    "popularity": 76
+  },
+  {
+    "id": "tour_hanoi_001",
+    "name": "Hà Nội - Ninh Bình 3N2Đ",
+    "destination": "Hà Nội",
+    "destination_normalized": "ha-noi",
+    "departure_date": "2026-12-05",
+    "price": 3990000,
+    "url": "/tour/tour_hanoi_001",
+    "duration_days": 3,
+    "rating": 4.2,
+    "popularity": 65
+  }
+]

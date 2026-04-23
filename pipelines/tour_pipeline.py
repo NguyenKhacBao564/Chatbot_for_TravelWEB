@@ -1,47 +1,50 @@
-
-import os
 import json
-import faiss
-import numpy as np
-from sentence_transformers import SentenceTransformer
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModelForTokenClassification, pipeline
-from vncorenlp import VnCoreNLP
-from dateutil.parser import parse
-from datetime import datetime, timedelta
 import logging
-import re
-import os
-import calendar
-import torch
-from extractors.extract_location import extract_location
-from extractors.extract_time import extract_all_times
-from extractors.extract_price import extract_price_vn
+from datetime import datetime, timedelta
+from typing import Optional
+
 from pydantic import BaseModel
+
+try:
+    import torch
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
+except ImportError:
+    torch = None
+    AutoModelForSequenceClassification = None
+    AutoTokenizer = None
+
+from extractors.extract_location import extract_location
+from extractors.extract_price import extract_price_vn
+from extractors.extract_time import extract_all_times
 from google_genAI import get_genai_response
 from pipelines.retrieval import RetrievalPipeline
+from schemas.chat_response import ChatResponse
+from schemas.tour_models import ExtractedEntities
+from services.entity_normalizer import (
+    extract_destination_from_text,
+    normalize_entities,
+    to_search_filters,
+)
+from services.tour_search_service import TourSearchService
 
 
-# Cấu hình logging
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 class ResetRequest(BaseModel):
     user_id: str = "default_user"
 
+
 class SessionManager:
-    """Quản lý session người dùng với TTL."""
+    """In-memory per-user session manager with TTL."""
+
     def __init__(self, ttl_hours=24):
         self.sessions = {}
         self.ttl = timedelta(hours=ttl_hours)
 
     def get_session(self, user_id):
         if user_id not in self.sessions or self._is_expired(user_id):
-            self.sessions[user_id] = {
-                "location": None, "time": None, "price": None,
-                "last_updated": datetime.now(), "search_history": []
-            }
+            self.sessions[user_id] = self._new_session()
         return self.sessions[user_id]
 
     def _is_expired(self, user_id):
@@ -50,14 +53,23 @@ class SessionManager:
         return last_updated and (datetime.now() - last_updated) > self.ttl
 
     def reset_session(self, user_id):
-        self.sessions[user_id] = {
-            "location": None, "time": None, "price": None,
-            "last_updated": datetime.now(), "search_history": []
+        self.sessions[user_id] = self._new_session()
+        logger.debug("Reset session for user_id=%s", user_id)
+
+    @staticmethod
+    def _new_session():
+        return {
+            "location": None,
+            "time": None,
+            "price": None,
+            "last_updated": datetime.now(),
+            "search_history": [],
         }
-        logger.debug(f"Reset session for user_id: {user_id}")
+
 
 class TourRetrievalPipeline:
-    """Pipeline để tìm kiếm và trả lời thông tin tour du lịch."""
+    """NLP orchestration layer for travel chatbot requests."""
+
     INTENT_LABELS = {
         0: "find_tour_with_location",
         1: "find_tour_with_time",
@@ -66,190 +78,271 @@ class TourRetrievalPipeline:
         4: "find_tour_with_location_and_price",
         5: "find_tour_with_time_and_price",
         6: "find_with_all",
-        7: "out_of_scope"
-     }
+        7: "out_of_scope",
+    }
 
-    def __init__(self):
+    LOCATION_INTENTS = {
+        "find_tour_with_location",
+        "find_tour_with_location_and_time",
+        "find_tour_with_location_and_price",
+        "find_with_all",
+    }
+    TIME_INTENTS = {
+        "find_tour_with_location_and_time",
+        "find_tour_with_time",
+        "find_tour_with_time_and_price",
+        "find_with_all",
+    }
+    PRICE_INTENTS = {
+        "find_tour_with_location_and_price",
+        "find_tour_with_price",
+        "find_tour_with_time_and_price",
+        "find_with_all",
+    }
 
-        # Load SentenceTransformer
-        self.retrievalPipeline = RetrievalPipeline()
+    def __init__(
+        self,
+        retrieval_pipeline: Optional[RetrievalPipeline] = None,
+        tour_search_service: Optional[TourSearchService] = None,
+        load_models: bool = True,
+        intent_model_path: str = "training/phobert_intent_finetuned",
+    ):
+        self.retrievalPipeline = retrieval_pipeline
+        if self.retrievalPipeline is None:
+            try:
+                self.retrievalPipeline = RetrievalPipeline()
+            except Exception as exc:
+                logger.warning("FAQ retrieval pipeline is unavailable: %s", exc)
 
-        # Load PhoBERT cho phân loại ý định
-        model_intent_path = "training/phobert_intent_finetuned"
-        self.intent_tokenizer = AutoTokenizer.from_pretrained(model_intent_path)
-        self.intent_model = AutoModelForSequenceClassification.from_pretrained(model_intent_path)
-        # self.intent_labels = {0: "find_tour_with_location", 1: "find_tour_with_location_and_time", 2: "find_tour_with_location_and_price", 3: "out_of_scope"}
+        self.tour_search_service = tour_search_service or TourSearchService()
+        self.intent_tokenizer = None
+        self.intent_model = None
 
-
-        jar_path = "training/VnCoreNLP-1.1.1.jar"
-        try:
-            self.vncorenlp = VnCoreNLP(jar_path, annotators="wseg,pos,ner", max_heap_size='-Xmx2g')
-        except Exception as e:
-            logger.error(f"Không thể khởi tạo VnCoreNLP: {e}")
-            raise
+        if load_models:
+            self._load_intent_model(intent_model_path)
 
         self.session_manager = SessionManager()
-        logger.info("Khởi tạo TourRetrievalPipeline thành công!")
+        logger.info("TourRetrievalPipeline initialized")
+
+    def _load_intent_model(self, model_path: str):
+        if torch is None or AutoTokenizer is None or AutoModelForSequenceClassification is None:
+            logger.warning("Torch/Transformers are not installed, using rule-based intent fallback")
+            return
+        try:
+            self.intent_tokenizer = AutoTokenizer.from_pretrained(model_path)
+            self.intent_model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        except Exception as exc:
+            logger.warning("Intent model unavailable, using rule-based fallback: %s", exc)
 
     def extract_intent(self, query):
+        if self.intent_tokenizer is None or self.intent_model is None:
+            return self._extract_intent_fallback(query)
+
         try:
-            inputs = self.intent_tokenizer(query, return_tensors="pt", max_length=128, truncation=True, padding=True)
+            inputs = self.intent_tokenizer(
+                query,
+                return_tensors="pt",
+                max_length=128,
+                truncation=True,
+                padding=True,
+            )
             with torch.no_grad():
                 outputs = self.intent_model(**inputs)
             predicted_class = torch.argmax(outputs.logits, dim=1).item()
-            return self.INTENT_LABELS[predicted_class]
-        except Exception as e:
-            logger.error(f"Lỗi phân loại ý định: {e}")
+            return self.INTENT_LABELS.get(predicted_class, "out_of_scope")
+        except Exception as exc:
+            logger.error("Intent classification failed: %s", exc)
+            return self._extract_intent_fallback(query)
+
+    def _extract_intent_fallback(self, query):
+        query_lower = query.lower()
+        has_location = bool(extract_destination_from_text(query)[1])
+        has_time = extract_all_times(query) not in (None, "None")
+        has_price = extract_price_vn(query) != "None"
+        looks_like_tour_query = any(
+            keyword in query_lower
+            for keyword in ["tour", "du lịch", "đi ", "khởi hành", "giá", "ngân sách"]
+        )
+        if not looks_like_tour_query and not (has_location or has_time or has_price):
             return "out_of_scope"
 
-    def extract_entities(self, query,intent, user_id="default_user"):
+        if has_location and has_time and has_price:
+            return "find_with_all"
+        if has_location and has_time:
+            return "find_tour_with_location_and_time"
+        if has_location and has_price:
+            return "find_tour_with_location_and_price"
+        if has_time and has_price:
+            return "find_tour_with_time_and_price"
+        if has_location:
+            return "find_tour_with_location"
+        if has_time:
+            return "find_tour_with_time"
+        if has_price:
+            return "find_tour_with_price"
+        return "out_of_scope"
+
+    def extract_entities(self, query, intent, user_id="default_user"):
         session = self.session_manager.get_session(user_id)
         location = session["location"]
         time = session["time"]
         price = session["price"]
 
-
-        if intent in ["find_tour_with_location", "find_tour_with_location_and_time", "find_tour_with_location_and_price", "find_with_all"]:
+        if intent in self.LOCATION_INTENTS:
             extracted_location = extract_location(query)
             if extracted_location != "None":
                 location = extracted_location
                 session["location"] = location
-                logger.debug(f"Extracted location: {location}")
+                logger.debug("Extracted location=%s", location)
+            else:
+                fallback_location, _ = extract_destination_from_text(query)
+                if fallback_location:
+                    location = fallback_location
+                    session["location"] = location
+                    logger.debug("Extracted location by alias=%s", location)
 
-        if intent in  ["find_tour_with_location_and_time", "find_tour_with_time", "find_tour_with_time_and_price", "find_with_all"]:
+        if intent in self.TIME_INTENTS:
             extracted_time = extract_all_times(query)
             if extracted_time != "None":
                 time = extracted_time
                 session["time"] = time
-                logger.debug(f"Extracted time: {time}")
+                logger.debug("Extracted time=%s", time)
 
-        if intent in ["find_tour_with_location_and_price", "find_tour_with_price", "find_tour_with_time_and_price", "find_with_all"]:
+        if intent in self.PRICE_INTENTS:
             extracted_price = extract_price_vn(query)
             if extracted_price != "None":
                 price = extracted_price
-                session["price"] = price    
-                logger.debug(f"Extracted price: {price}")
-       
+                session["price"] = price
+                logger.debug("Extracted price=%s", price)
+
+        raw_entities = {"location": location, "time": time, "price": price}
+        normalized = normalize_entities(raw_entities, query)
+        if not location and normalized.location:
+            session["location"] = normalized.location
+
         session["last_updated"] = datetime.now()
-        session["search_history"].append({"query": query})
-        logger.debug(f"Extracted entities: location={location}, time={time}, price={price}")
-        return {"location": location, "time": time, "price": price}
+        session["search_history"].append({"query": query, "intent": intent})
+        return {"location": session["location"], "time": time, "price": price}
 
     def reset_session(self, user_id):
-            self.session_manager.reset_session(user_id)
-            logger.debug(f"Session reset for user_id: {user_id}")
+        self.session_manager.reset_session(user_id)
 
-    def get_faq_response(self, query, k=1):
+    def get_faq_response(self, query, k=3):
+        fallback_message = (
+            "Dạ, em chỉ hỗ trợ các câu hỏi liên quan đến du lịch hoặc tư vấn tour phù hợp. "
+            "Mong bạn thông cảm."
+        )
+        if self.retrievalPipeline is None:
+            return fallback_message, []
+
         try:
-            respond = self.retrievalPipeline.get_retrieved_context(query, top_k=k)
-            if respond == "None":
-                respond = get_genai_response(
-                "Trả lời là 'Tôi chỉ trả lời các câu hỏi liên quan đến vấn đề du lịch hoặc tư vấn 1 tour du lịch phù hợp cho bạn' một cách lịch sự và ngắn gọn"
+            sources = self.retrievalPipeline.retrieve(query, top_k=k)
+            if not sources:
+                return fallback_message, []
+
+            answer = sources[0].answer or fallback_message
+            prompt = (
+                "Hãy diễn đạt lại câu trả lời sau bằng tiếng Việt tự nhiên, ngắn gọn, "
+                "không thêm thông tin mới ngoài nội dung được cung cấp.\n"
+                f"Câu trả lời gốc: {answer}"
             )
-            else:
-                respond = get_genai_response(
-                    "Với câu hỏi này: '" + query + "' và tôi đưa ra câu trả lời này: '" + respond + "'. Nếu câu trả lời không liên quan đến câu hỏi thì hãy trả lời một cách tự nhiên câu sau 'Tôi chỉ trả lời các câu hỏi liên quan đến vấn đề du lịch hoặc tư vấn 1 tour du lịch phù hợp cho bạn. Mong bạn thông cảm' còn nếu phù hợp thì không cần bảo gì ngoài đưa ra chính xác câu trả lời đó(không cần giải thích gì cả)!" 
-                )
-            # chat_response_text = get_genai_response(
-            #     "Kiểm tra xem câu query này: '" + query + "' và câu trả lời này: '" + respond + 
-            #     "' có phù hợp không, nếu phù hợp thì trả về đúng câu trả lời đó, nếu không thì chỉ cần trả lời là 'Tôi chỉ trả lời các câu hỏi liên quan đến vấn đề du lịch hoặc tư vấn 1 tour du lịch phù hợp cho bạn' "
-            # )
-            return {
-                "response": respond,
-            }
-        except Exception as e:
-            logger.error(f"Lỗi tìm FAQ với KNN: {e}")
-            return {
-                "response": "Dạ, em chưa hiểu ý bạn. Bạn có thể hỏi về tour hoặc đặt phòng khách sạn không ạ?",
-            }
+            message = get_genai_response(prompt, fallback=answer)
+            return message or answer, sources
+        except Exception as exc:
+            logger.error("FAQ retrieval failed: %s", exc)
+            return fallback_message, []
 
     def get_tour_response(self, query, user_id="default_user"):
         intent = self.extract_intent(query)
-        print("intent: ", intent)
+        logger.info("Detected intent=%s user_id=%s", intent, user_id)
+
         if intent == "out_of_scope":
-            faq_response = self.get_faq_response(query)
-            return {
-                    "status": "faq",
-                    "response": f"{faq_response['response']}",
-                    "location": "None",
-                    "time": "None",
-                    "price": "None"
-                }
-        
-        info = self.extract_entities(query, intent, user_id)
-
-        missing_info = []
-        if not info["location"]:
-            missing_info.append("Điểm đến (ví dụ: Đà Lạt, Hà Nội, Phú Quốc,...)")
-        if not info["time"]:
-            missing_info.append("Thời gian khởi hành (ví dụ: tháng 12, 25/5,...)")
-        if not info["price"]:
-            missing_info.append("Giá (ví dụ: 5 triệu, 20m,...)")
-
-        if missing_info:
-            prompt = (
-                f"Người dùng đã cung cấp thông tin về tour du lịch: "
-                f"Địa điểm: {info['location'] or 'chưa có'}, "
-                f"Thời gian: {info['time'] or 'chưa có'}, "
-                f"Giá: {info['price'] or 'chưa có'}. "
-                f"Vui lòng viết một câu trả lời lịch sự bằng tiếng Việt, xác nhận thông tin đã nhận và yêu cầu cung cấp các thông tin còn thiếu (thông tin sẽ cung cấp sau không cần nói ra cụ thể) "
-                f"Nói kiểu câu cuối cùng có dấu :"
-                f"Ví dụ: 'Dạ, em đã ghi nhận thông tin quý khách muốn tìm tour đến [địa điểm]/[thời gian khởi hành]/[giá tour]. Xin quý khách vui lòng cho em biết thêm thông tin như:'"
+            message, faq_sources = self.get_faq_response(query)
+            response = ChatResponse(
+                status="faq",
+                message=message,
+                entities=ExtractedEntities(),
+                missing_fields=[],
+                tours=[],
+                faq_sources=faq_sources,
             )
-            try:
-                response_text = get_genai_response(prompt)
-                return {
-                    "status": "missing_info",
-                    "response": f"{response_text}\n- " + "\n- ".join(missing_info),
-                    "location": info['location'] or "None",
-                    "time": info['time'] or "None",
-                    "price": info['price'] or "None"
-                }
-            except Exception as e:
-                logger.error(f"Lỗi gọi Gemini API: {e}")
-                return {
-                    "status": "missing_info",
-                    "response": "Dạ, để tìm tour phù hợp, em cần bạn cung cấp thêm:\n- " + "\n- ".join(missing_info),
-                    "location": info['location'] or "None",
-                    "time": info['time'] or "None",
-                    "price": info['price'] or "None"
-                }
-        # Đủ thông tin thì tìm kiếm
-        prompt = (
-                f"Đã có các thông tin về tour du lịch: "
-                f"Địa điểm: {info['location']}, "
-                f"Thời gian: {info['time']}, "
-                f"Giá: {info['price']}. "
-                f"Vui lòng viết một câu trả lời lịch sự bằng tiếng Việt, xác nhận thông tin đã nhận và đưa ra câu mở đầu trước khi liệt kê các tour đã tìm được. "
-                f"Nói kiểu câu cuối cùng có dấu :"
-                f"Ví dụ: 'Dạ, em đã tìm được một số tour phù hợp như: "
+            return self._to_response_dict(response)
+
+        raw_entities = self.extract_entities(query, intent, user_id)
+        entities = normalize_entities(raw_entities, query)
+        missing_fields = self._missing_fields(entities)
+
+        if missing_fields:
+            response = ChatResponse(
+                status="missing_info",
+                message=self._missing_info_message(entities, missing_fields),
+                entities=entities,
+                missing_fields=missing_fields,
+                tours=[],
+                faq_sources=[],
             )
-        response_text = get_genai_response(prompt)
-        response_obj = {
-            "status": "success",
-            "response": f"{response_text}",
-            "location": info['location'] or "None",
-            "time": info['time'] or "None",
-            "price": info['price'] or "None"
+            return self._to_response_dict(response)
+
+        search_filters = to_search_filters(entities)
+        tours = self.tour_search_service.search(search_filters)
+        status = "success" if tours else "no_results"
+        message = self._tour_search_message(entities, len(tours))
+
+        if tours:
+            self.reset_session(user_id)
+
+        response = ChatResponse(
+            status=status,
+            message=message,
+            entities=entities,
+            missing_fields=[],
+            tours=tours,
+            faq_sources=[],
+        )
+        return self._to_response_dict(response)
+
+    def _missing_fields(self, entities: ExtractedEntities):
+        missing_fields = []
+        if not entities.destination_normalized:
+            missing_fields.append("location")
+        if not entities.date_start or not entities.date_end:
+            missing_fields.append("time")
+        if entities.price_min is None and entities.price_max is None:
+            missing_fields.append("price")
+        return missing_fields
+
+    def _missing_info_message(self, entities: ExtractedEntities, missing_fields):
+        labels = {
+            "location": "điểm đến",
+            "time": "thời gian khởi hành",
+            "price": "ngân sách dự kiến",
         }
-        self.reset_session("default_user")
-        return response_obj
+        missing_text = ", ".join(labels[field] for field in missing_fields)
+        fallback = f"Dạ, em đã ghi nhận thông tin hiện có. Quý khách vui lòng cho em biết thêm {missing_text}."
+        prompt = (
+            "Viết một câu tiếng Việt lịch sự để hỏi khách cung cấp thêm thông tin còn thiếu "
+            f"cho việc tìm tour. Thông tin còn thiếu: {missing_text}. "
+            f"Thông tin đã có: {entities.dict()}."
+        )
+        return get_genai_response(prompt, fallback=fallback) or fallback
 
+    def _tour_search_message(self, entities: ExtractedEntities, total_results: int):
+        if total_results == 0:
+            return (
+                "Dạ, hiện em chưa tìm thấy tour phù hợp với điểm đến, thời gian và ngân sách này. "
+                "Quý khách có thể thử đổi ngày khởi hành hoặc ngân sách."
+            )
 
+        fallback = f"Dạ, em tìm được {total_results} tour phù hợp:"
+        prompt = (
+            "Viết một câu mở đầu ngắn bằng tiếng Việt trước khi hiển thị danh sách tour. "
+            "Không thêm thông tin tour cụ thể. "
+            f"Số tour tìm được: {total_results}. Bộ lọc: {entities.dict()}."
+        )
+        return get_genai_response(prompt, fallback=fallback) or fallback
 
-
-# if __name__ == "__main__":
-#     current_dir = os.path.dirname(os.path.abspath(__file__))
-#     pipeline = TourRetrievalPipeline(
-#         index_file=os.path.join(current_dir, "faq_index.faiss"),
-#         metadata_file=os.path.join(current_dir, "faq_metadata.json")
-#     )
-#     user_id = "test_user"
-#     while True:
-#         user_query = input("Bạn: ")
-#         if user_query.lower() in ["exit", "quit"]:
-#             break
-#         response = pipeline.get_tour_response(user_query, user_id=user_id)
-#         print(f"Bot: {response}")
-
-
+    @staticmethod
+    def _to_response_dict(response: ChatResponse):
+        if hasattr(response, "model_dump_json"):
+            return json.loads(response.model_dump_json())
+        return json.loads(response.json())

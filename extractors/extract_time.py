@@ -1,18 +1,8 @@
-
-import sys
-sys.stdout.reconfigure(encoding='utf-8')  # Đảm bảo console hỗ trợ Unicode
 import logging
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
+from datetime import datetime, timedelta
 import re
 
-# Cấu hình logging với mã hóa UTF-8
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
-logging.getLogger().handlers[0].setStream(sys.stdout)  # Áp dụng UTF-8 cho logging
+logger = logging.getLogger(__name__)
 
 # Ánh xạ tiếng Việt sang số
 MONTH_MAP = {
@@ -25,6 +15,14 @@ DAY_OF_WEEK_MAP = {
     "thứ hai": 0, "thứ ba": 1, "thứ tư": 2, "thứ năm": 3,
     "thứ sáu": 4, "thứ bảy": 5, "chủ nhật": 6
 }
+
+
+def add_months(value, months):
+    month = value.month - 1 + months
+    year = value.year + month // 12
+    month = month % 12 + 1
+    day = min(value.day, 28)
+    return value.replace(year=year, month=month, day=day)
 
 def is_valid_date(year, month, day=None):
     """Kiểm tra ngày tháng hợp lệ."""
@@ -44,11 +42,11 @@ def parse_relative_time(query, now=None):
     
     query = query.lower()
     if "ngày mai" in query:
-        return (now + relativedelta(days=1)).strftime("%Y-%m-%d")
+        return (now + timedelta(days=1)).strftime("%Y-%m-%d")
     elif ("tuần sau" in query or "tuần tới" in query) and not any(day in query for day in DAY_OF_WEEK_MAP):
-        return (now + relativedelta(weeks=1)).strftime("%Y-%m-%d")
+        return (now + timedelta(weeks=1)).strftime("%Y-%m-%d")
     elif "tháng tới" in query or "tháng sau" in query:
-        return (now + relativedelta(months=1)).strftime("%Y-%m")
+        return add_months(now, 1).strftime("%Y-%m")
     
     # Xử lý thứ trong tuần
     for day_name, day_index in DAY_OF_WEEK_MAP.items():
@@ -57,7 +55,7 @@ def parse_relative_time(query, now=None):
             days_until = (day_index - current_dow + 7) % 7
             if "tuần sau" in query or "tuần tới" in query:
                 days_until = days_until or 7  # Nếu trùng ngày, chọn tuần sau
-            return (now + relativedelta(days=days_until)).strftime("%Y-%m-%d")
+            return (now + timedelta(days=days_until)).strftime("%Y-%m-%d")
     
     return None
 
@@ -131,7 +129,7 @@ def extract_all_times(query, now=None):
         str: Ngày/tháng định dạng YYYY-MM-DD, YYYY-MM, hoặc None nếu không tìm thấy.
     """
     if not query or not isinstance(query, str):
-        logging.error("Truy vấn không hợp lệ")
+        logger.error("Truy vấn không hợp lệ")
         return None
 
     if now is None:
@@ -140,16 +138,16 @@ def extract_all_times(query, now=None):
     # Thử regex cho ngày/tháng cụ thể
     result = extract_time(query, now)
     if result:
-        logging.info(f"Truy vấn: {query} -> Thời gian (regex): {result}")
+        logger.info("Truy vấn: %s -> Thời gian (regex): %s", query, result)
         return result
 
     # Thử thời gian tương đối
     result = parse_relative_time(query, now)
     if result:
-        logging.info(f"Truy vấn: {query} -> Thời gian (tương đối): {result}")
+        logger.info("Truy vấn: %s -> Thời gian (tương đối): %s", query, result)
         return result
 
-    logging.info(f"Truy vấn: {query} -> Không tìm thấy thời gian")
+    logger.info("Truy vấn: %s -> Không tìm thấy thời gian", query)
     return "None"
 
 # # Test với 50 truy vấn

@@ -1,4 +1,10 @@
 venv/
 .venv/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.DS_Store
 training/models/
 training/phobert_intent_finetuned/

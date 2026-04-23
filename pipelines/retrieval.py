@@ -1,42 +1,63 @@
 import json
-import faiss
-import numpy as np
-from sentence_transformers import SentenceTransformer
-from google import genai
-from google.genai import types
+import logging
+
+try:
+    import faiss
+    import numpy as np
+    from sentence_transformers import SentenceTransformer
+except ImportError:
+    faiss = None
+    np = None
+    SentenceTransformer = None
+
+from schemas.chat_response import FAQSource
+
+
+logger = logging.getLogger(__name__)
 
 
 class RetrievalPipeline:
-    def __init__(self, index_file="faq_index.faiss", metadata_file="faq_metadata.json"):
-        # Tải metadata
+    def __init__(
+        self,
+        index_file="faq_index.faiss",
+        metadata_file="faq_metadata.json",
+        distance_threshold=1.0,
+    ):
+        if faiss is None or np is None or SentenceTransformer is None:
+            raise RuntimeError("faiss-cpu, numpy and sentence-transformers are required for FAQ retrieval")
+        self.distance_threshold = distance_threshold
         with open(metadata_file, "r", encoding="utf-8") as f:
             self.metadata = json.load(f)
 
-        # Tải Faiss index
         self.index = faiss.read_index(index_file)
-
-        # Khởi tạo model embedding
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
 
-    def get_retrieved_context(self, user_query, top_k=1):
-        # Embed câu hỏi
+    def retrieve(self, user_query, top_k=3):
+        """Return FAQ matches with metadata for response/debugging."""
         query_embedding = self.model.encode([user_query], show_progress_bar=False)
         query_embedding = np.array(query_embedding).astype("float32")
 
-        # Tìm top-k vector gần nhất
         distances, indices = self.index.search(query_embedding, top_k)
-        print("Distances:", distances)
-        
-        #kiểm tra xem câu trả lời có phù hợp không, tự đặt ngưỡng 
-        if distances[0][0] > 1:
+        logger.debug("FAQ retrieval distances: %s", distances)
+
+        sources = []
+        for distance, idx in zip(distances[0], indices[0]):
+            if idx < 0 or idx >= len(self.metadata) or distance > self.distance_threshold:
+                continue
+            item = self.metadata[idx]
+            sources.append(
+                FAQSource(
+                    question=item.get("question"),
+                    answer=item.get("answer"),
+                    tags=item.get("tags", []),
+                    score=round(1 / (1 + float(distance)), 4),
+                    source=f"faq_metadata:{idx}",
+                )
+            )
+        return sources
+
+    def get_retrieved_context(self, user_query, top_k=1):
+        sources = self.retrieve(user_query, top_k=top_k)
+        if not sources:
             return "None"
-
-        # Tạo context từ metadata
-        context_lines = []
-        for idx in indices[0]:
-            if idx < len(self.metadata):
-                item = self.metadata[idx]
-                context_lines.append(f"{item['answer']}")
-        print("Context lines :", context_lines)
-        return "\n---\n".join(context_lines) if context_lines else ""
-
+        return "\n---\n".join(source.answer or "" for source in sources)

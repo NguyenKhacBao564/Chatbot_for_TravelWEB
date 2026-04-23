@@ -1,5 +1,7 @@
 # Nhận Xét Chatbot Hiện Tại Và Hướng Phát Triển
 
+> Ghi chú: tài liệu này được viết trước đợt refactor kiến trúc. Trạng thái hiện tại sau refactor được mô tả trong `README.md` và `REFACTOR_NOTES.md`.
+
 Tài liệu này đánh giá trạng thái hiện tại của chatbot trong repository và đề xuất hướng cải tiến theo mức độ ưu tiên. Mục tiêu là giúp dự án chuyển từ prototype có khả năng demo sang hệ thống ổn định hơn, dễ triển khai và dễ mở rộng.
 
 ## Tóm Tắt Hiện Trạng
