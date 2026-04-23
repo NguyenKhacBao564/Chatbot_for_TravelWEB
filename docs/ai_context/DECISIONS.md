@@ -69,15 +69,18 @@ Last updated: 2026-04-23
   - frontend integration is simpler
   - API contract changes should be deliberate
 
-## D-007 Require All Three Search Fields Before Searching
+## D-007 Partial Search Requires `location + one optional field`
 
-- Status: Temporary
-- Context: Current pipeline only searches after `location`, `time`, and `price` are all present.
-- Choice: Keep strict gating for now.
+- Status: Accepted and executed in batch 2
+- Context: Requiring `location`, `time`, and `price` before searching made the chatbot too rigid for normal travel queries.
+- Choice:
+  - keep `location` as the only hard requirement
+  - run deterministic search when at least one of `time` or `price` is present
+  - return `status="partial_search"` when search runs with one optional filter still missing
 - Consequences:
-  - simpler logic today
-  - weak UX
-  - likely one of the next changes
+  - better product usefulness in real conversations
+  - frontend must handle `partial_search` explicitly
+  - destination-only queries still do not search by design
 
 ## D-008 Fix Correctness Before Expanding Capability
 
@@ -101,11 +104,20 @@ Last updated: 2026-04-23
   - easier frontend integration in development
   - production origin policy still needs separate hardening
 
+## D-010 Keep Session After Partial Search, Reset After Full Success
+
+- Status: Accepted and executed in batch 2
+- Context: Users often provide destination first, then add time or budget in later turns.
+- Choice:
+  - keep session state after `missing_info` and `partial_search`
+  - reset session only after full `success`
+- Consequences:
+  - multi-turn narrowing works correctly
+  - in-memory session state remains more important to runtime behavior
+  - session bugs would have more visible user impact
+
 ## Open Decisions
 
-- Partial search policy:
-  - require only `location`
-  - or require `location + one optional field`
 - Real tour data integration path:
   - SQL repository
   - backend API repository
@@ -123,4 +135,3 @@ Last updated: 2026-04-23
 1. `ROADMAP.md`
 2. `EXECUTION_PLAN.md`
 3. `WORKLOG.md`
-

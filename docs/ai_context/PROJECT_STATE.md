@@ -9,6 +9,7 @@ Last updated: 2026-04-23
 - API entrypoints today: `GET /health`, `POST /chat`, `POST /reset`.
 - Main runtime path: `server.py` -> `TourRetrievalPipeline` -> structured `ChatResponse`.
 - Tour search works, but only against a JSON adapter with 6 sample tours.
+- Search now runs with `location + time`, `location + price`, or all three filters.
 - FAQ retrieval is separate from tour search and depends on FAISS artifacts plus `all-MiniLM-L6-v2`.
 
 ## What Is Working Now
@@ -28,8 +29,11 @@ Last updated: 2026-04-23
   - `price_min`
   - `price_max`
 - Deterministic tour filtering/ranking in `TourSearchService`.
+- Partial search with structured response:
+  - `status="partial_search"` when one optional filter is still missing
+  - `missing_fields` carries the missing optional filter
 - FAQ retrieval with metadata when FAISS stack is available.
-- Test suite covering API smoke, validation, parsers, reset flow, session isolation, and basic tour search flow.
+- Test suite covering API smoke, validation, parsers, reset flow, partial search flows, session isolation, and multi-turn search progression.
 
 ## What Is Fallback / Mock / Adapter
 
@@ -53,7 +57,7 @@ Last updated: 2026-04-23
   - in-memory
   - per-process
   - unsynchronized
-- Search is still gated on all three fields: `location`, `time`, `price`.
+- Search still depends on `location` as the only hard requirement and will not run on destination-only queries.
 - `extract_location()` still returns only the first detected location.
 - Destination normalization is still based on a small hardcoded alias map.
 - FAQ retrieval still uses:
@@ -62,10 +66,12 @@ Last updated: 2026-04-23
 
 ## Current Engineering Focus
 
-- Next focus:
-  - partial search when `location` is present
-  - more realistic tour data access beyond the current JSON adapter
-  - evaluation harness for intent, FAQ, and search quality
+- Strategic priority:
+  - replace the JSON adapter with a real website repository when concrete DB/API details are available
+- Practical next batch in this repo:
+  - improve repository readiness without guessing external integration details
+  - add better evaluation coverage for search and retrieval quality
+  - expand destination normalization beyond the current alias map
 
 ## Read This Next
 
@@ -78,4 +84,3 @@ Last updated: 2026-04-23
 - Root `README.md`
 - `REFACTOR_NOTES.md`
 - `ampfeedback.md`
-

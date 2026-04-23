@@ -1,5 +1,6 @@
 import json
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -33,6 +34,13 @@ def model_to_dict(model):
     if hasattr(model, "model_dump"):
         return model.model_dump()
     return model.dict()
+
+
+@dataclass
+class SearchDecision:
+    can_search: bool
+    is_partial: bool
+    missing_fields: list[str]
 
 
 class SessionManager:
@@ -269,9 +277,10 @@ class TourRetrievalPipeline:
             return self._to_response_dict(response)
 
         entities = self.extract_entities(query, intent, user_id)
-        missing_fields = self._missing_fields(entities)
+        search_decision = self._assess_search_state(entities)
+        missing_fields = search_decision.missing_fields
 
-        if missing_fields:
+        if not search_decision.can_search:
             response = ChatResponse(
                 status="missing_info",
                 message=self._missing_info_message(entities, missing_fields),
@@ -284,48 +293,132 @@ class TourRetrievalPipeline:
 
         search_filters = to_search_filters(entities)
         tours = self.tour_search_service.search(search_filters)
-        status = "success" if tours else "no_results"
-        message = self._tour_search_message(entities, len(tours))
+        if search_decision.is_partial:
+            status = "partial_search"
+        else:
+            status = "success" if tours else "no_results"
+        message = self._tour_search_message(
+            entities=entities,
+            total_results=len(tours),
+            is_partial=search_decision.is_partial,
+            missing_fields=missing_fields,
+        )
 
-        if tours:
+        if status == "success":
             self.reset_session(user_id)
 
         response = ChatResponse(
             status=status,
             message=message,
             entities=entities,
-            missing_fields=[],
+            missing_fields=missing_fields,
             tours=tours,
             faq_sources=[],
         )
         return self._to_response_dict(response)
 
-    def _missing_fields(self, entities: ExtractedEntities):
+    @staticmethod
+    def _has_location(entities: ExtractedEntities) -> bool:
+        return bool(entities.destination_normalized)
+
+    @staticmethod
+    def _has_time(entities: ExtractedEntities) -> bool:
+        return bool(entities.date_start and entities.date_end)
+
+    @staticmethod
+    def _has_price(entities: ExtractedEntities) -> bool:
+        return entities.price_min is not None or entities.price_max is not None
+
+    def _assess_search_state(self, entities: ExtractedEntities) -> SearchDecision:
+        has_location = self._has_location(entities)
+        has_time = self._has_time(entities)
+        has_price = self._has_price(entities)
+
+        if not has_location:
+            return SearchDecision(can_search=False, is_partial=False, missing_fields=["location"])
+
+        if not (has_time or has_price):
+            return SearchDecision(
+                can_search=False,
+                is_partial=False,
+                missing_fields=["time", "price"],
+            )
+
         missing_fields = []
-        if not entities.destination_normalized:
-            missing_fields.append("location")
-        if not entities.date_start or not entities.date_end:
+        if not has_time:
             missing_fields.append("time")
-        if entities.price_min is None and entities.price_max is None:
+        if not has_price:
             missing_fields.append("price")
-        return missing_fields
+
+        return SearchDecision(
+            can_search=True,
+            is_partial=bool(missing_fields),
+            missing_fields=missing_fields,
+        )
 
     def _missing_info_message(self, entities: ExtractedEntities, missing_fields):
-        labels = {
-            "location": "điểm đến",
-            "time": "thời gian khởi hành",
-            "price": "ngân sách dự kiến",
-        }
-        missing_text = ", ".join(labels[field] for field in missing_fields)
-        fallback = f"Dạ, em đã ghi nhận thông tin hiện có. Quý khách vui lòng cho em biết thêm {missing_text}."
+        if "location" in missing_fields:
+            if self._has_time(entities) or self._has_price(entities):
+                known_filters = []
+                if self._has_time(entities):
+                    known_filters.append("thời gian")
+                if self._has_price(entities):
+                    known_filters.append("ngân sách")
+                known_text = " và ".join(known_filters)
+                fallback = (
+                    f"Dạ, em đã ghi nhận {known_text} của quý khách. "
+                    "Quý khách cho em xin thêm điểm đến để em tìm tour phù hợp."
+                )
+            else:
+                fallback = (
+                    "Dạ, để em bắt đầu tìm tour phù hợp, quý khách cho em xin điểm đến mong muốn nhé."
+                )
+            prompt = (
+                "Viết một câu tiếng Việt lịch sự để xin thêm điểm đến cho việc tìm tour. "
+                f"Thông tin đã có: {model_to_dict(entities)}."
+            )
+            return get_genai_response(prompt, fallback=fallback) or fallback
+
+        fallback = (
+            f"Dạ, em đã ghi nhận điểm đến {entities.location}. "
+            "Quý khách cho em xin thêm thời gian khởi hành hoặc ngân sách dự kiến để em bắt đầu tìm tour phù hợp."
+        )
         prompt = (
-            "Viết một câu tiếng Việt lịch sự để hỏi khách cung cấp thêm thông tin còn thiếu "
-            f"cho việc tìm tour. Thông tin còn thiếu: {missing_text}. "
+            "Viết một câu tiếng Việt lịch sự để xin thêm ít nhất một điều kiện tìm tour. "
+            "Yêu cầu khách bổ sung thời gian khởi hành hoặc ngân sách dự kiến. "
             f"Thông tin đã có: {model_to_dict(entities)}."
         )
         return get_genai_response(prompt, fallback=fallback) or fallback
 
-    def _tour_search_message(self, entities: ExtractedEntities, total_results: int):
+    def _tour_search_message(
+        self,
+        entities: ExtractedEntities,
+        total_results: int,
+        is_partial: bool,
+        missing_fields: list[str],
+    ):
+        if is_partial:
+            missing_label = "thời gian khởi hành" if "time" in missing_fields else "ngân sách dự kiến"
+            known_label = "ngân sách hiện có" if "time" in missing_fields else "thời gian hiện có"
+            if total_results == 0:
+                fallback = (
+                    f"Dạ, hiện em chưa tìm thấy tour phù hợp với điểm đến và {known_label}. "
+                    f"Quý khách có thể cho em thêm {missing_label} hoặc điều chỉnh tiêu chí để em lọc lại."
+                )
+            else:
+                fallback = (
+                    f"Dạ, em tìm được {total_results} tour phù hợp với điểm đến và {known_label}. "
+                    f"Quý khách có thể cho em thêm {missing_label} để em lọc sát hơn."
+                )
+            prompt = (
+                "Viết một câu tiếng Việt ngắn, lịch sự cho kết quả tìm tour theo điều kiện chưa đầy đủ. "
+                "Nếu có tour, nói đã tìm được tour và gợi ý khách bổ sung điều kiện còn thiếu để lọc sát hơn. "
+                "Nếu không có tour, nói chưa tìm thấy tour và gợi ý khách bổ sung điều kiện còn thiếu hoặc đổi tiêu chí. "
+                f"Số tour tìm được: {total_results}. Điều kiện còn thiếu: {missing_fields}. "
+                f"Bộ lọc hiện có: {model_to_dict(entities)}."
+            )
+            return get_genai_response(prompt, fallback=fallback) or fallback
+
         if total_results == 0:
             return (
                 "Dạ, hiện em chưa tìm thấy tour phù hợp với điểm đến, thời gian và ngân sách này. "

@@ -6,6 +6,7 @@ Last updated: 2026-04-23
 
 - Current sprint goal: improve product behavior without breaking the deterministic core.
 - Batch 1 cleanup/correctness is complete.
+- Batch 2 partial search is complete.
 - Scope: next 1-2 implementation batches only.
 - Non-goal: no full rewrite, no real DB integration in this sprint, no LLM-driven search logic.
 
@@ -13,7 +14,7 @@ Last updated: 2026-04-23
 
 - Make the current runtime more useful before real DB integration lands.
 - Keep cleanup gains from batch 1 stable.
-- Move toward partial search and better repository realism next.
+- Keep partial search stable and improve repository realism without guessing unavailable external details.
 
 ## Batch 1 — Cleanup And Correctness
 
@@ -28,6 +29,7 @@ Last updated: 2026-04-23
 
 ## Batch 2 — Partial Search
 
+- Status: Completed
 - Purpose:
   - make the chatbot useful before all optional fields are known
 - Likely files to touch:
@@ -39,6 +41,10 @@ Last updated: 2026-04-23
   - search can run when `location` is present and at least one of `time` or `price` exists
   - response makes missing optional filters explicit
   - existing structured response contract remains usable
+- Result:
+  - `partial_search` status added to the main response contract
+  - destination-only requests still return `missing_info`
+  - session now survives `partial_search` and resets after full `success`
 - Risks:
   - UX policy ambiguity
   - need to avoid weakening deterministic behavior
@@ -46,46 +52,65 @@ Last updated: 2026-04-23
   - no DB integration yet
   - no ranking redesign yet
 
-## Batch 3 — Repository Realism Upgrade
+## Batch 3 — Repository Readiness And Richer Fixtures
 
 - Purpose:
-  - reduce the gap between current JSON adapter and actual website data
+  - reduce the gap between current JSON adapter behavior and realistic search scenarios
 - Likely files to touch:
   - `repositories/tour_repository.py`
-  - `data/tours_sample.json` or a new adapter file
+  - `data/tours_sample.json` or new test fixtures
+  - destination normalization or fixture helpers
   - tests
 - Acceptance criteria:
   - repository contract stays stable
-  - runtime can operate on more realistic tour data
+  - runtime can operate on more realistic sample data
   - ranking/filter tests cover richer scenarios
+- Success condition:
+  - no code has to guess external DB/API details
+  - fixture coverage is good enough to surface ranking and normalization issues locally
 - Risks:
   - external integration may still be blocked
   - larger fixture data may expose ranking issues
 - Non-goals:
-  - no major architectural split
+  - no guessed DB integration
   - no FAQ model change yet
+
+## Batch 4 — Real Repository Integration When Source Details Exist
+
+- Trigger:
+  - concrete website DB or API access details are available
+- Purpose:
+  - replace or complement `JsonTourRepository` with a real adapter
+- Likely files to touch:
+  - `repositories/tour_repository.py` or a new repository adapter module
+  - integration tests
+  - config docs
+- Acceptance criteria:
+  - real data path is wired without changing deterministic search policy
+  - mapping from source fields into `Tour` is explicit and tested
+- Non-goals:
+  - no business logic migration into LLM
+  - no full backend rewrite
 
 ## Intentionally Postponed
 
-- real website DB/API repository integration
 - FAQ embedding stack replacement
 - session externalization
 - evaluation harness
 - observability work
 
-These matter, but they are not the best next coding batch.
+These matter, but they are not all actionable in the current repo state.
 
 ## Immediate Success Check
 
-After the next batch, the repo should be in this state:
+After batch 3, the repo should be in this state:
 
-- chatbot can search with partial but still deterministic filters
-- response contract still holds
-- code remains ready for real repository integration
+- partial-search behavior remains stable
+- repository contract is still clean
+- richer fixtures and tests make the next integration step safer
 
 ## Read This Next
 
 1. `WORKLOG.md`
 2. `ROADMAP.md`
 3. `PROJECT_STATE.md`
-

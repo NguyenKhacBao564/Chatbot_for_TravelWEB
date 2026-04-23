@@ -4,10 +4,10 @@ Last updated: 2026-04-23
 
 ## Quick Scan
 
-- Cleanup batch is done.
-- First priority now: replace placeholder tour data path with a real repository integration.
-- Biggest product limitation after that: search is too strict and requires all three fields.
-- Evaluation is the next quality gate once the runtime path is more realistic.
+- Cleanup and partial-search batches are done.
+- Strategic priority is still real tour repository integration.
+- Practical next coding batch in this repo is not the same thing, because external DB/API details are still unavailable here.
+- Evaluation is the next quality gate once repository readiness is better.
 
 ## Now
 
@@ -24,20 +24,23 @@ Last updated: 2026-04-23
 - Success condition:
   - `JsonTourRepository` can be swapped for a real repository
   - `/chat` returns real tours from non-sample data
+- Current reality:
+  - this remains the strategic priority
+  - it is blocked until concrete source details exist in or around the repo
 
-### 2. Partial Search
+### 2. Repository Readiness And Richer Tour Fixtures
 
 - Why it matters:
-  - current UX is overly strict
-  - many real users will provide only destination + one other constraint
+  - real DB/API integration cannot be wired safely yet
+  - current sample data is too small to expose ranking and normalization problems
 - Expected impact: high
 - Approximate effort: medium
 - Dependencies:
-  - cleanup batch completed
-  - agreement on desired UX
+  - current repository contract stays stable
 - Success condition:
-  - search runs when `location` is present and at least one optional filter exists
-  - response clearly indicates missing optional filters
+  - tests cover richer destination/date/price combinations
+  - sample or fixture data exposes more realistic search behavior
+  - repository adapter remains swappable without changing pipeline/search code
 
 ### 3. Evaluation Harness For Intent, FAQ, And Search
 
@@ -111,4 +114,3 @@ These are not the highest-leverage changes for the current repo state.
 1. `EXECUTION_PLAN.md`
 2. `WORKLOG.md`
 3. `PROJECT_STATE.md`
-

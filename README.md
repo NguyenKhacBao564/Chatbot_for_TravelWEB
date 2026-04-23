@@ -22,7 +22,7 @@ flowchart LR
 
 Các lớp chính:
 
-- `server.py`: FastAPI app, endpoint `/chat` và `/health`.
+- `server.py`: FastAPI app, endpoint `/chat`, `/health`, `/reset`.
 - `pipelines/tour_pipeline.py`: orchestration layer, giữ context/session, gọi NLP và business search.
 - `extractors/`: trích xuất location, time, price từ câu tiếng Việt.
 - `services/entity_normalizer.py`: chuẩn hóa entity raw thành filter nghiệp vụ như `destination_normalized`, `date_start`, `date_end`, `price_min`, `price_max`.
@@ -33,7 +33,7 @@ Các lớp chính:
 
 ## Tour Search Và FAQ Khác Nhau Như Thế Nào
 
-Tour search là business flow. Khi người dùng đã cung cấp đủ điểm đến, thời gian và ngân sách, backend tạo structured filters rồi tìm trong nguồn tour thật bằng `TourSearchService`. LLM không quyết định tour nào hợp lệ.
+Tour search là business flow. Backend sẽ chạy search khi đã có `location` và ít nhất một trong hai điều kiện `time` hoặc `price`. Nếu chỉ mới có điểm đến, backend sẽ hỏi thêm ít nhất một ràng buộc nữa. LLM không quyết định tour nào hợp lệ.
 
 FAQ retrieval là knowledge flow. Khi intent là `out_of_scope` hoặc câu hỏi phù hợp FAQ, backend dùng FAISS để lấy câu trả lời từ `faq_metadata.json`. Gemini chỉ được dùng để diễn đạt lại ngắn gọn, không phải nguồn sự thật.
 
@@ -74,11 +74,48 @@ FAQ retrieval là knowledge flow. Khi intent là `out_of_scope` hoặc câu hỏ
 }
 ```
 
+Ví dụ partial search:
+
+```json
+{
+  "status": "partial_search",
+  "message": "Dạ, em tìm được 2 tour phù hợp với điểm đến và thời gian hiện có. Quý khách có thể cho em thêm ngân sách dự kiến để em lọc sát hơn.",
+  "entities": {
+    "location": "Đà Lạt",
+    "time": "2026-12",
+    "price": null,
+    "destination_normalized": "da-lat",
+    "date_start": "2026-12-01",
+    "date_end": "2026-12-31",
+    "price_min": null,
+    "price_max": null
+  },
+  "missing_fields": ["price"],
+  "tours": [
+    {
+      "id": "tour_dalat_001",
+      "name": "Đà Lạt 3N2Đ săn mây và khám phá Langbiang",
+      "destination": "Đà Lạt",
+      "destination_normalized": "da-lat",
+      "departure_date": "2026-12-12",
+      "price": 4590000,
+      "url": "/tour/tour_dalat_001",
+      "duration_days": 3,
+      "rating": 4.7,
+      "popularity": 92
+    }
+  ],
+  "faq_sources": []
+}
+```
+
 Các `status` chính:
 
-- `missing_info`: thiếu `location`, `time` hoặc `price`.
-- `success`: đủ thông tin và tìm thấy tour.
-- `no_results`: đủ thông tin nhưng chưa có tour phù hợp.
+- `missing_info`: thiếu `location`, hoặc mới chỉ có `location` mà chưa có thêm `time` hay `price`.
+- `partial_search`: đã có `location` và một trong `time` hoặc `price`, nên search đã chạy nhưng vẫn còn thiếu filter tùy chọn còn lại.
+- `partial_search` có thể đi kèm `tours=[]` nếu bộ lọc partial hiện tại chưa khớp tour nào.
+- `success`: đã có `location + time + price` và tìm thấy tour.
+- `no_results`: đã có `location + time + price` nhưng chưa có tour phù hợp.
 - `faq`: trả lời theo FAQ/fallback.
 
 ## Yêu Cầu Môi Trường
@@ -203,7 +240,8 @@ Test hiện bao phủ:
 - Parser thời gian.
 - Parser giá.
 - Tour search deterministic.
-- Session tách theo `user_id`.
+- Partial search với `location + time`, `location + price`, và no-results.
+- Session tách theo `user_id` và tích lũy field qua nhiều turn.
 
 ## Ghi Chú Triển Khai
 

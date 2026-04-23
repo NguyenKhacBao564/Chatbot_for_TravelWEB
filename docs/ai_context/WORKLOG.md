@@ -91,9 +91,45 @@ Last updated: 2026-04-23
 - Next exact step:
   - implement partial search policy after deciding minimum required fields
 
+## 2026-04-23 - Batch 2 partial search
+
+- Session goal:
+  - make tour search useful when users provide destination plus only one optional constraint
+- Main changes:
+  - changed search gating from `location + time + price` to `location + (time or price)`
+  - added `status="partial_search"` to represent deterministic search with one missing optional filter
+  - kept `missing_info` for missing destination or destination-only queries
+  - preserved session state after `partial_search` and reset only after full `success`
+  - updated message policy for missing location, destination-only, partial-search success, partial-search no-results, and full-search outcomes
+- Files changed:
+  - `pipelines/tour_pipeline.py`
+  - `schemas/chat_response.py`
+  - `tests/test_pipeline_sessions.py`
+  - `README.md`
+  - `docs/ai_context/PROJECT_STATE.md`
+  - `docs/ai_context/ARCHITECTURE.md`
+  - `docs/ai_context/DECISIONS.md`
+  - `docs/ai_context/ROADMAP.md`
+  - `docs/ai_context/EXECUTION_PLAN.md`
+  - `docs/ai_context/WORKLOG.md`
+- Tests added/updated:
+  - location-only gating
+  - `location + time`
+  - `location + price`
+  - full search with all filters
+  - time-only, price-only, and `time + price` without location
+  - partial-search no-results
+  - multi-turn session accumulation through partial search into full search
+  - full suite passes
+- Blockers / caveats:
+  - no real website repository yet
+  - destination-only search is still intentionally blocked
+  - partial-search responses use the same `tours` field for both non-empty and empty results, so callers must inspect both `status` and `tours`
+- Next exact step:
+  - improve repository readiness and richer fixtures without guessing external DB/API details
+
 ## Read This Next
 
 1. `EXECUTION_PLAN.md`
 2. `PROJECT_STATE.md`
 3. `ROADMAP.md`
-

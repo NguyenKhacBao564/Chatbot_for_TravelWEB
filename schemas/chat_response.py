@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +14,7 @@ class FAQSource(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    status: str
+    status: Literal["missing_info", "partial_search", "success", "no_results", "faq"]
     message: str
     entities: ExtractedEntities
     missing_fields: List[str] = Field(default_factory=list)
