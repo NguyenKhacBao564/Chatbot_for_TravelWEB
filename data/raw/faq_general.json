@@ -1,0 +1,498 @@
+[
+  {
+    "question": "Tôi cần chuẩn bị những gì khi đặt tour du lịch?",
+    "answer": "Khi đặt tour, bạn cần cung cấp thông tin cá nhân chính xác như họ tên, ngày sinh, số điện thoại, email và số CMND/Passport. Ngoài ra, hãy chuẩn bị sẵn thẻ thanh toán hoặc thông tin tài khoản ngân hàng để thực hiện thanh toán.",
+    "id": 0,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Có yêu cầu gì về độ tuổi khi đặt tour không?",
+    "answer": "Đa phần các tour không giới hạn độ tuổi, tuy nhiên trẻ em dưới 15 tuổi thường cần đi cùng người lớn. Một số tour mạo hiểm hoặc leo núi có thể có yêu cầu về độ tuổi tối thiểu để đảm bảo an toàn.",
+    "id": 1,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Tôi có thể đặt tour cho người khác được không?",
+    "answer": "Hoàn toàn được! Bạn có thể đặt tour cho người thân, bạn bè. Chỉ cần cung cấp đầy đủ thông tin của người tham gia tour khi đặt chỗ. Hãy chắc chắn rằng họ biết về lịch trình và các điều khoản của tour.",
+    "id": 2,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Nếu tôi có yêu cầu đặc biệt về ăn uống thì sao?",
+    "answer": "Bạn nên thông báo về yêu cầu ăn uống đặc biệt (chay, dị ứng thực phẩm,...) ngay khi đặt tour để chúng tôi có thể chuẩn bị tốt nhất. Các nhà hàng và khách sạn thường có thể đáp ứng các yêu cầu này nếu được báo trước.",
+    "id": 3,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Tôi có được hủy tour sau khi đã đặt không?",
+    "answer": "Bạn có thể hủy tour, nhưng sẽ có các điều khoản hủy phạt tùy thuộc vào thời gian hủy so với ngày khởi hành. Hãy đọc kỹ chính sách hủy tour trước khi đặt để tránh phát sinh chi phí không mong muốn. Thông thường, hủy càng sớm, phí phạt càng thấp.",
+    "id": 4,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Tôi có thể thay đổi thông tin người tham gia tour sau khi đã đặt không?",
+    "answer": "Việc thay đổi thông tin người tham gia tour tùy thuộc vào quy định của từng tour và hãng lữ hành. Liên hệ với chúng tôi càng sớm càng tốt để được hỗ trợ. Một số trường hợp có thể phát sinh phí thay đổi.",
+    "id": 5,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Tôi cần thanh toán trước bao nhiêu phần trăm khi đặt tour?",
+    "answer": "Thông thường, bạn cần thanh toán một khoản đặt cọc (khoảng 30-50% giá trị tour) để giữ chỗ. Số tiền còn lại sẽ được thanh toán trước ngày khởi hành một khoảng thời gian nhất định (ví dụ: 15-30 ngày). Thông tin chi tiết sẽ được ghi rõ trong điều khoản đặt tour.",
+    "id": 6,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Tour bao gồm những chi phí gì?",
+    "answer": "Thông thường, giá tour sẽ bao gồm chi phí di chuyển (vé máy bay, xe đưa đón), khách sạn, các bữa ăn theo chương trình, vé tham quan các điểm du lịch và bảo hiểm du lịch (nếu có). Hãy kiểm tra kỹ thông tin chi tiết của tour để biết chính xác các khoản bao gồm.",
+    "id": 7,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Tôi có cần mua bảo hiểm du lịch khi đi tour không?",
+    "answer": "Bảo hiểm du lịch không bắt buộc, nhưng rất nên mua để đảm bảo an toàn và được hỗ trợ trong trường hợp có rủi ro (tai nạn, ốm đau, mất hành lý,...). Một số tour, đặc biệt là tour nước ngoài, có thể yêu cầu bảo hiểm du lịch là điều kiện tham gia.",
+    "id": 8,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Nếu tour bị hủy do thời tiết xấu thì sao?",
+    "answer": "Trong trường hợp tour bị hủy do thời tiết xấu hoặc các sự kiện bất khả kháng, bạn thường sẽ được hoàn lại tiền hoặc được chuyển sang một tour khác có giá trị tương đương. Chính sách cụ thể sẽ được thông báo trước khi đặt tour.",
+    "id": 9,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Có những hình thức thanh toán nào khi đặt tour?",
+    "answer": "Bạn có thể thanh toán bằng nhiều hình thức như chuyển khoản ngân hàng, thanh toán trực tuyến qua thẻ tín dụng/thẻ ghi nợ, hoặc thanh toán trực tiếp tại văn phòng. Hãy chọn hình thức thanh toán thuận tiện nhất cho bạn.",
+    "id": 10,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Tôi có thể yêu cầu hóa đơn VAT khi đặt tour không?",
+    "answer": "Hoàn toàn có thể! Bạn có thể yêu cầu hóa đơn VAT khi đặt tour và cung cấp thông tin công ty/cá nhân để chúng tôi xuất hóa đơn. Hóa đơn sẽ được gửi đến bạn sau khi tour kết thúc.",
+    "id": 11,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Tôi cần mang theo giấy tờ gì khi đi tour?",
+    "answer": "Bạn cần mang theo CMND/Passport (bản gốc) để làm thủ tục nhận phòng khách sạn và lên máy bay (nếu có). Nếu đi tour nước ngoài, hãy kiểm tra kỹ thời hạn visa và các giấy tờ cần thiết khác.",
+    "id": 12,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Làm sao để biết tour còn chỗ hay không?",
+    "answer": "Bạn có thể kiểm tra tình trạng chỗ trống của tour trực tiếp trên website hoặc liên hệ với nhân viên tư vấn để được hỗ trợ. Các tour phổ biến thường hết chỗ nhanh, nên bạn hãy đặt sớm để đảm bảo có chỗ.",
+    "id": 13,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Có chương trình khuyến mãi nào khi đặt tour không?",
+    "answer": "Chúng tôi thường xuyên có các chương trình khuyến mãi, giảm giá đặc biệt dành cho khách hàng đặt sớm, khách hàng thân thiết hoặc các dịp lễ tết. Hãy theo dõi website và fanpage của chúng tôi để không bỏ lỡ các ưu đãi hấp dẫn.",
+    "id": 14,
+    "tags": [
+      "tour_booking_conditions"
+    ]
+  },
+  {
+    "question": "Tôi muốn hủy tour đã đặt, thủ tục như thế nào vậy?",
+    "answer": "Bạn vui lòng liên hệ trực tiếp với bộ phận hỗ trợ khách hàng của chúng tôi qua số điện thoại hoặc email đã cung cấp trong xác nhận đặt tour. Chúng tôi sẽ hướng dẫn bạn chi tiết về quy trình hủy tour và các giấy tờ cần thiết.",
+    "id": 15,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Nếu tôi hủy tour sát ngày khởi hành thì có được hoàn tiền không?",
+    "answer": "Việc hoàn tiền khi hủy tour sát ngày khởi hành phụ thuộc vào chính sách hủy tour của từng nhà cung cấp dịch vụ. Thường thì, thời gian hủy càng gần ngày khởi hành, phí hủy càng cao và số tiền hoàn lại càng ít. Bạn nên xem kỹ điều khoản và điều kiện trước khi đặt tour.",
+    "id": 16,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Chính sách hoàn tiền của công ty mình như thế nào?",
+    "answer": "Chính sách hoàn tiền của chúng tôi được quy định rõ ràng trong điều khoản và điều kiện của từng tour. Thông thường, nếu bạn hủy tour sớm, bạn sẽ được hoàn lại một phần tiền, trừ đi phí dịch vụ và phí hủy theo quy định. Vui lòng kiểm tra chi tiết trên website hoặc liên hệ nhân viên tư vấn để biết thêm chi tiết.",
+    "id": 17,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Tôi có thể chuyển nhượng tour cho người khác nếu không đi được không?",
+    "answer": "Việc chuyển nhượng tour có thể được chấp nhận tùy thuộc vào quy định của từng tour và nhà cung cấp dịch vụ. Bạn cần thông báo cho chúng tôi trước một thời gian nhất định để chúng tôi có thể làm việc với nhà cung cấp và đảm bảo việc chuyển nhượng diễn ra suôn sẻ. Hãy liên hệ với chúng tôi càng sớm càng tốt.",
+    "id": 18,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Nếu tour bị hủy do thời tiết xấu thì tôi có được hoàn tiền không?",
+    "answer": "Trong trường hợp tour bị hủy do các yếu tố bất khả kháng như thời tiết xấu hoặc thiên tai, bạn thường sẽ được hoàn lại toàn bộ số tiền đã thanh toán hoặc được chuyển sang một tour khác tương đương. Chúng tôi sẽ thông báo cho bạn ngay khi có thông tin chính thức từ nhà cung cấp dịch vụ.",
+    "id": 19,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Thời gian hoàn tiền sau khi hủy tour là bao lâu?",
+    "answer": "Thời gian hoàn tiền sau khi hủy tour thường dao động từ 7 đến 30 ngày làm việc, tùy thuộc vào phương thức thanh toán ban đầu và quy trình xử lý của ngân hàng. Chúng tôi sẽ cố gắng xử lý yêu cầu của bạn nhanh nhất có thể và thông báo cho bạn khi tiền được hoàn trả.",
+    "id": 20,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Tôi có thể hủy một phần dịch vụ trong tour (ví dụ: hủy đêm khách sạn) không?",
+    "answer": "Việc hủy một phần dịch vụ trong tour có thể được chấp nhận tùy thuộc vào quy định của từng nhà cung cấp dịch vụ. Tuy nhiên, bạn có thể phải chịu một khoản phí hủy nhất định và số tiền hoàn lại có thể không đáng kể. Hãy liên hệ với chúng tôi để được tư vấn cụ thể.",
+    "id": 21,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Nếu tôi mua bảo hiểm du lịch, việc hủy tour có được bồi thường không?",
+    "answer": "Nếu bạn mua bảo hiểm du lịch, việc hủy tour có thể được bồi thường tùy thuộc vào điều khoản và điều kiện của hợp đồng bảo hiểm. Bạn cần liên hệ trực tiếp với công ty bảo hiểm để được hướng dẫn về quy trình yêu cầu bồi thường và các giấy tờ cần thiết. Hãy giữ lại tất cả hóa đơn và chứng từ liên quan.",
+    "id": 22,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Tôi có thể thay đổi ngày khởi hành của tour không?",
+    "answer": "Việc thay đổi ngày khởi hành của tour có thể được chấp nhận tùy thuộc vào tình trạng chỗ trống và quy định của từng nhà cung cấp dịch vụ. Bạn cần thông báo cho chúng tôi trước một thời gian nhất định và có thể phải chịu một khoản phí thay đổi. Hãy liên hệ với chúng tôi để kiểm tra tính khả thi.",
+    "id": 23,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Phí hủy tour được tính như thế nào?",
+    "answer": "Phí hủy tour thường được tính dựa trên thời gian hủy tour so với ngày khởi hành. Thông thường, phí hủy sẽ tăng lên khi bạn hủy tour càng gần ngày khởi hành. Bạn nên xem kỹ điều khoản và điều kiện của tour để biết chi tiết về phí hủy.",
+    "id": 24,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Tôi đã thanh toán tour bằng thẻ tín dụng, tiền hoàn lại sẽ được chuyển vào đâu?",
+    "answer": "Nếu bạn đã thanh toán tour bằng thẻ tín dụng, tiền hoàn lại sẽ được chuyển trực tiếp vào thẻ tín dụng mà bạn đã sử dụng để thanh toán. Thời gian nhận được tiền hoàn lại có thể khác nhau tùy thuộc vào ngân hàng phát hành thẻ của bạn.",
+    "id": 25,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Có trường hợp nào tôi được hoàn tiền 100% khi hủy tour không?",
+    "answer": "Thông thường, bạn sẽ được hoàn tiền 100% khi hủy tour nếu tour bị hủy do lỗi từ phía công ty du lịch hoặc nhà cung cấp dịch vụ, ví dụ như thay đổi lịch trình đột ngột hoặc không cung cấp dịch vụ đúng như cam kết. Hãy liên hệ với chúng tôi để được hỗ trợ.",
+    "id": 26,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Nếu tôi không sử dụng hết các dịch vụ trong tour, tôi có được hoàn tiền không?",
+    "answer": "Việc hoàn tiền cho các dịch vụ không sử dụng trong tour thường không được áp dụng, trừ khi có quy định khác trong hợp đồng. Bạn nên cân nhắc kỹ trước khi quyết định không sử dụng một dịch vụ nào đó trong tour.",
+    "id": 27,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Tôi có thể khiếu nại về chính sách hoàn tiền nếu không hài lòng không?",
+    "answer": "Nếu bạn không hài lòng với chính sách hoàn tiền hoặc quy trình xử lý, bạn có quyền khiếu nại bằng cách gửi email hoặc liên hệ trực tiếp với bộ phận chăm sóc khách hàng của chúng tôi. Chúng tôi sẽ xem xét và giải quyết khiếu nại của bạn một cách công bằng và nhanh chóng.",
+    "id": 28,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Tour của tôi có bao gồm bảo hiểm hủy tour không?",
+    "answer": "Một số tour có thể bao gồm bảo hiểm hủy tour, nhưng không phải tất cả. Bạn nên kiểm tra kỹ thông tin chi tiết của tour hoặc liên hệ với nhân viên tư vấn để biết chắc chắn. Nếu tour không bao gồm, bạn có thể mua thêm bảo hiểm du lịch để được bảo vệ tốt hơn.",
+    "id": 29,
+    "tags": [
+      "tour_cancellation_refund"
+    ]
+  },
+  {
+    "question": "Tôi có thể thay đổi lịch trình tour đã đặt không?",
+    "answer": "Chào bạn, việc thay đổi lịch trình tour tùy thuộc vào chính sách của từng công ty du lịch và loại tour bạn đã chọn. Bạn nên liên hệ trực tiếp với công ty du lịch hoặc đại lý đặt tour để được hỗ trợ tốt nhất. Thông thường, các thay đổi có thể chịu phí và phụ thuộc vào thời gian còn lại trước ngày khởi hành.",
+    "id": 30,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Phí thay đổi lịch trình tour là bao nhiêu?",
+    "answer": "Mức phí thay đổi lịch trình tour khác nhau tùy thuộc vào quy định của từng công ty du lịch, thời điểm thay đổi và loại tour. Thông thường, phí có thể dao động từ 10% đến 50% giá trị tour, hoặc thậm chí cao hơn nếu gần ngày khởi hành. Hãy kiểm tra kỹ điều khoản và điều kiện khi đặt tour để nắm rõ thông tin này nhé.",
+    "id": 31,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Nếu tôi muốn rút ngắn tour thì có được hoàn tiền không?",
+    "answer": "Việc hoàn tiền khi rút ngắn tour phụ thuộc vào chính sách của công ty du lịch. Thường thì bạn sẽ không được hoàn lại toàn bộ số tiền, mà chỉ một phần nhỏ, hoặc không được hoàn tiền nếu việc rút ngắn tour diễn ra trong thời gian ngắn trước hoặc trong khi tour đang diễn ra. Hãy liên hệ với công ty du lịch để biết thông tin chi tiết.",
+    "id": 32,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Tôi có thể chuyển nhượng tour cho người khác nếu không đi được không?",
+    "answer": "Việc chuyển nhượng tour cho người khác thường được chấp nhận, nhưng cần tuân thủ theo quy định của công ty du lịch. Bạn cần thông báo cho công ty du lịch trước một khoảng thời gian nhất định và cung cấp thông tin của người nhận chuyển nhượng. Có thể có một khoản phí nhỏ cho việc chuyển nhượng này.",
+    "id": 33,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Thời gian tối đa để thay đổi lịch trình tour là bao lâu trước ngày khởi hành?",
+    "answer": "Thời gian tối đa để thay đổi lịch trình tour thường là từ 7 đến 30 ngày trước ngày khởi hành, tùy thuộc vào quy định của từng công ty du lịch. Thay đổi càng gần ngày khởi hành, khả năng được chấp nhận càng thấp và phí có thể càng cao. Hãy kiểm tra kỹ điều khoản của tour bạn đã đặt.",
+    "id": 34,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Tôi có thể thay đổi điểm khởi hành của tour không?",
+    "answer": "Việc thay đổi điểm khởi hành của tour thường rất khó khăn, đặc biệt nếu tour đã được xác nhận và các dịch vụ đã được đặt trước. Bạn nên liên hệ với công ty du lịch càng sớm càng tốt để xem xét khả năng này. Có thể bạn sẽ phải chịu thêm chi phí phát sinh nếu việc thay đổi được chấp nhận.",
+    "id": 35,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Nếu tôi muốn nâng cấp hạng phòng trong tour thì có được không?",
+    "answer": "Việc nâng cấp hạng phòng trong tour thường có thể thực hiện được, tùy thuộc vào tình trạng phòng trống và chính sách của khách sạn. Bạn cần liên hệ với công ty du lịch để kiểm tra khả năng nâng cấp và mức phí phát sinh. Hãy nhớ rằng việc nâng cấp có thể không khả dụng nếu gần ngày khởi hành.",
+    "id": 36,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Tôi có thể thêm người vào tour đã đặt không?",
+    "answer": "Việc thêm người vào tour đã đặt phụ thuộc vào số lượng chỗ trống còn lại và quy định của công ty du lịch. Bạn nên liên hệ sớm để kiểm tra khả năng này. Giá tour cho người mới có thể khác với giá bạn đã trả, đặc biệt nếu có các chương trình khuyến mãi đã kết thúc.",
+    "id": 37,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Nếu tour bị hủy do thời tiết xấu, tôi có được hoàn tiền không?",
+    "answer": "Trong trường hợp tour bị hủy do thời tiết xấu hoặc các sự kiện bất khả kháng khác, bạn thường sẽ được hoàn lại một phần hoặc toàn bộ số tiền đã thanh toán. Tuy nhiên, chính sách hoàn tiền cụ thể sẽ phụ thuộc vào quy định của công ty du lịch. Hãy kiểm tra kỹ điều khoản và điều kiện khi đặt tour.",
+    "id": 38,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Tôi có thể thay đổi các hoạt động trong tour không?",
+    "answer": "Việc thay đổi các hoạt động trong tour thường không được khuyến khích, vì lịch trình đã được lên kế hoạch chi tiết. Tuy nhiên, bạn có thể hỏi hướng dẫn viên về các lựa chọn thay thế nếu có. Nếu bạn muốn thay đổi lớn, hãy liên hệ với công ty du lịch trước khi tour khởi hành.",
+    "id": 39,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Tôi có thể thay đổi loại phương tiện di chuyển trong tour không?",
+    "answer": "Việc thay đổi loại phương tiện di chuyển trong tour (ví dụ, từ xe khách sang tàu hỏa) thường rất khó khăn và có thể không khả thi, vì các dịch vụ đã được đặt trước. Bạn nên liên hệ với công ty du lịch để xem xét khả năng này, nhưng hãy chuẩn bị tinh thần cho việc có thể phát sinh chi phí lớn.",
+    "id": 40,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Nếu tôi muốn đổi sang một tour khác thì có được không?",
+    "answer": "Việc đổi sang một tour khác thường được xem xét như một trường hợp hủy tour cũ và đặt tour mới. Bạn sẽ phải chịu phí hủy tour cũ theo quy định, và thanh toán đầy đủ cho tour mới. Hãy cân nhắc kỹ trước khi quyết định đổi tour.",
+    "id": 41,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Tôi có thể thay đổi ngôn ngữ hướng dẫn viên không?",
+    "answer": "Việc thay đổi ngôn ngữ hướng dẫn viên thường rất khó khăn, đặc biệt nếu tour đã được xác nhận. Bạn nên liên hệ với công ty du lịch trước khi đặt tour để yêu cầu ngôn ngữ hướng dẫn viên mong muốn. Nếu không, bạn có thể tự trang bị thêm các công cụ hỗ trợ dịch thuật.",
+    "id": 42,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Tôi có thể thay đổi số lượng bữa ăn trong tour không?",
+    "answer": "Việc thay đổi số lượng bữa ăn trong tour có thể thực hiện được, tùy thuộc vào chính sách của công ty du lịch và nhà cung cấp dịch vụ ăn uống. Bạn nên liên hệ với công ty du lịch để yêu cầu thay đổi và biết thêm chi tiết về chi phí phát sinh.",
+    "id": 43,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Nếu tôi muốn hủy tour, tôi có được hoàn lại tiền đặt cọc không?",
+    "answer": "Việc hoàn lại tiền đặt cọc khi hủy tour phụ thuộc vào chính sách hủy tour của công ty du lịch. Thông thường, bạn sẽ mất một phần hoặc toàn bộ tiền đặt cọc nếu hủy tour gần ngày khởi hành. Hãy đọc kỹ các điều khoản và điều kiện khi đặt tour để biết rõ thông tin này.",
+    "id": 44,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Tôi có thể thay đổi thời gian của một hoạt động cụ thể trong tour không?",
+    "answer": "Việc thay đổi thời gian của một hoạt động cụ thể trong tour thường không khả thi, vì lịch trình đã được lên kế hoạch chi tiết và phối hợp với nhiều bên liên quan. Tuy nhiên, bạn có thể trao đổi với hướng dẫn viên để tìm hiểu xem có khả năng điều chỉnh nhỏ nào không.",
+    "id": 45,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Tôi có thể yêu cầu một phòng có giường đôi thay vì hai giường đơn không?",
+    "answer": "Bạn hoàn toàn có thể yêu cầu một phòng có giường đôi thay vì hai giường đơn. Hãy liên hệ với công ty du lịch hoặc khách sạn càng sớm càng tốt để yêu cầu này. Tuy nhiên, việc đáp ứng yêu cầu này phụ thuộc vào tình trạng phòng trống của khách sạn.",
+    "id": 46,
+    "tags": [
+      "tour_schedule_changes"
+    ]
+  },
+  {
+    "question": "Tôi cần hỗ trợ gì trong suốt chuyến đi?",
+    "answer": "Trong suốt chuyến đi, chúng tôi hỗ trợ bạn 24/7 qua điện thoại, email và ứng dụng. Chúng tôi sẽ giúp bạn giải quyết mọi vấn đề phát sinh, từ thay đổi lịch trình đến hỗ trợ y tế khẩn cấp. Đừng ngần ngại liên hệ với chúng tôi bất cứ lúc nào!",
+    "id": 47,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Nếu tôi bị mất hành lý trong tour thì sao?",
+    "answer": "Nếu bạn bị mất hành lý, hãy báo ngay cho trưởng đoàn hoặc hướng dẫn viên. Chúng tôi sẽ hỗ trợ bạn liên hệ với hãng vận chuyển và làm các thủ tục cần thiết để tìm lại hành lý. Đồng thời, chúng tôi cũng sẽ hướng dẫn bạn cách mua sắm những vật dụng cần thiết tạm thời.",
+    "id": 48,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tôi có thể yêu cầu thay đổi lịch trình tour không?",
+    "answer": "Việc thay đổi lịch trình tour có thể được xem xét tùy thuộc vào tình hình thực tế và quy định của từng tour. Hãy liên hệ với chúng tôi càng sớm càng tốt để được hỗ trợ. Lưu ý rằng việc thay đổi có thể phát sinh chi phí.",
+    "id": 49,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Nếu tôi bị ốm trong tour thì phải làm sao?",
+    "answer": "Nếu bạn cảm thấy không khỏe, hãy báo ngay cho trưởng đoàn hoặc hướng dẫn viên. Chúng tôi sẽ hỗ trợ bạn tìm kiếm dịch vụ y tế gần nhất và liên hệ với bác sĩ nếu cần thiết. Đừng quên mang theo bảo hiểm du lịch để được hỗ trợ chi phí y tế.",
+    "id": 50,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tôi có thể liên hệ với ai nếu có thắc mắc về tour?",
+    "answer": "Bạn có thể liên hệ với bộ phận hỗ trợ khách hàng của chúng tôi qua số điện thoại, email hoặc chat trực tuyến trên website. Chúng tôi luôn sẵn sàng giải đáp mọi thắc mắc của bạn trước, trong và sau chuyến đi.",
+    "id": 51,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tour có hỗ trợ gì cho người lớn tuổi không?",
+    "answer": "Chúng tôi luôn cố gắng hỗ trợ tốt nhất cho người lớn tuổi trong tour. Hãy cho chúng tôi biết về bất kỳ yêu cầu đặc biệt nào của bạn trước khi khởi hành. Chúng tôi có thể sắp xếp xe lăn, phòng ở gần thang máy hoặc các bữa ăn phù hợp.",
+    "id": 52,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tôi có thể mang theo thú cưng trong tour không?",
+    "answer": "Rất tiếc, hầu hết các tour của chúng tôi không cho phép mang theo thú cưng. Điều này là để đảm bảo sự thoải mái và an toàn cho tất cả các thành viên trong đoàn. Tuy nhiên, bạn có thể liên hệ với chúng tôi để tìm hiểu về các dịch vụ trông giữ thú cưng tại điểm đến.",
+    "id": 53,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tôi có được hoàn tiền nếu hủy tour không?",
+    "answer": "Chính sách hoàn tiền khi hủy tour sẽ phụ thuộc vào thời điểm hủy và quy định của từng tour. Vui lòng tham khảo kỹ điều khoản và điều kiện của tour trước khi đặt. Chúng tôi sẽ cố gắng hỗ trợ bạn tốt nhất trong trường hợp bạn cần hủy tour.",
+    "id": 54,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tour có hỗ trợ phiên dịch không?",
+    "answer": "Các tour có hướng dẫn viên nói tiếng Việt sẽ không cần phiên dịch. Nếu bạn tham gia tour có hướng dẫn viên nói tiếng nước ngoài, chúng tôi có thể cung cấp dịch vụ phiên dịch theo yêu cầu. Vui lòng liên hệ trước để được báo giá và sắp xếp.",
+    "id": 55,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Nếu tôi bị lạc đường thì sao?",
+    "answer": "Trong trường hợp bạn bị lạc đường, hãy giữ bình tĩnh và liên hệ ngay với trưởng đoàn hoặc hướng dẫn viên. Chúng tôi sẽ cung cấp cho bạn thông tin về vị trí hiện tại và hướng dẫn bạn cách quay lại đoàn. Hãy luôn mang theo bản đồ và số điện thoại liên lạc của chúng tôi.",
+    "id": 56,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tôi có thể mua thêm các dịch vụ bổ sung trong tour không?",
+    "answer": "Có, bạn có thể mua thêm các dịch vụ bổ sung như vé tham quan các điểm du lịch, các buổi biểu diễn văn hóa hoặc các hoạt động vui chơi giải trí khác. Hãy liên hệ với trưởng đoàn hoặc hướng dẫn viên để được tư vấn và hỗ trợ đặt dịch vụ.",
+    "id": 57,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tour có hỗ trợ gì về visa không?",
+    "answer": "Chúng tôi có thể cung cấp thông tin và hướng dẫn về thủ tục xin visa cho các quốc gia mà bạn sẽ đến trong tour. Tuy nhiên, việc xin visa là trách nhiệm của mỗi cá nhân. Chúng tôi khuyến khích bạn nên xin visa sớm để tránh các vấn đề phát sinh.",
+    "id": 58,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tôi cần chuẩn bị những gì trước khi đi tour?",
+    "answer": "Trước khi đi tour, bạn nên chuẩn bị đầy đủ giấy tờ tùy thân, quần áo phù hợp với thời tiết, thuốc men cá nhân và các vật dụng cần thiết khác. Hãy tham khảo danh sách các vật dụng cần thiết mà chúng tôi cung cấp để đảm bảo bạn không bỏ sót bất cứ thứ gì.",
+    "id": 59,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tôi có thể trả tiền tour bằng hình thức nào?",
+    "answer": "Bạn có thể thanh toán tiền tour bằng nhiều hình thức khác nhau như chuyển khoản ngân hàng, thanh toán trực tuyến qua thẻ tín dụng hoặc thanh toán bằng tiền mặt tại văn phòng của chúng tôi. Vui lòng liên hệ với chúng tôi để biết thêm chi tiết về các hình thức thanh toán.",
+    "id": 60,
+    "tags": [
+      "tour_customer_support"
+    ]
+  },
+  {
+    "question": "Tour có đảm bảo an toàn cho khách hàng không?",
+    "answer": "Chúng tôi luôn đặt sự an toàn của khách hàng lên hàng đầu. Chúng tôi lựa chọn các đối tác vận chuyển và lưu trú uy tín, tuân thủ các quy định về an toàn và có đội ngũ nhân viên được đào tạo bài bản. Chúng tôi cũng khuyến khích khách hàng mua bảo hiểm du lịch để được bảo vệ tốt nhất.",
+    "id": 61,
+    "tags": [
+      "tour_customer_support"
+    ]
+  }
+]

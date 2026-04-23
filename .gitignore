@@ -1,0 +1,4 @@
+venv/
+.venv/
+training/models/
+training/phobert_intent_finetuned/

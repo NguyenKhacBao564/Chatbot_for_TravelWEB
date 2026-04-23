@@ -1,0 +1,72 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Travel-FAQ Entry",
+    "description": "Single question-answer pair for the RAG chatbot dataset.",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "location": {
+            "type": "string"
+        },
+        "category": {
+            "type": "string",
+            "enum": [
+                "destination", "weather", "transport", "scenery",
+                "visa", "tour", "payment", "career", "company", "membership", "promotion",
+                "destination_basics", "weather_best_time", "scenery_things_to_do", "visa_entry",
+                "tour_booking", "pricing_payment_currency", "promotions_membership",
+                "accommodation", "food_dining", "health_safety_insurance", "culture_etiquette",
+                "events_festivals", "connectivity_sim_wifi", "budgeting_tips",
+                "accessibility_family", "solo_female_safety", "sustainability_eco",
+                "emergency_laws", "packing_checklist",
+                "famous destination", "clothing", "shopping", "entertainment",
+                "tour_booking_conditions", "tour_cancellation_refund", "tour_schedule_changes", "tour_customer_support",
+                "food", "service", "culture" 
+            ]
+        },
+        "question": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 300
+        },
+        "answer": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 500
+        },
+        "sub_details": {
+            "type": "object",
+            "properties": {
+                "season": {"type": ["string", "null"]},
+                "suitable_for": {"type": ["string", "null"]},
+                "additional_info": {"type": ["string", "null"]}
+            }
+        },
+        "priority": {
+            "type": "integer"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "destination", "weather", "transport", "scenery",
+                    "visa", "tour", "payment", "career", "company", "membership", "promotion",
+                    "destination_basics", "weather_best_time", "scenery_things_to_do", "visa_entry",
+                    "tour_booking", "pricing_payment_currency", "promotions_membership",
+                    "accommodation", "food_dining", "health_safety_insurance", "culture_etiquette",
+                    "events_festivals", "connectivity_sim_wifi", "budgeting_tips",
+                    "accessibility_family", "solo_female_safety", "sustainability_eco",
+                    "emergency_laws", "packing_checklist",
+                    "famous destination", "clothing", "shopping", "entertainment",
+                    "tour_booking_conditions", "tour_cancellation_refund", "tour_schedule_changes", "tour_customer_support",
+                    "food", "service", "culture"  
+                ]
+            }
+        }
+    },
+    "required": ["id", "location", "category", "question", "answer"],
+    "additionalProperties": false
+}
