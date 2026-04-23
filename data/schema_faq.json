@@ -15,7 +15,6 @@
         "maxLength": 500
       },
       "category": {
-        "type": "string",
         "enum": ["destination", "weather", "transport", "scenery"]
       }
     },
