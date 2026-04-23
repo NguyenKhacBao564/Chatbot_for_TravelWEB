@@ -126,7 +126,7 @@ def extract_all_times(query, now=None):
         query (str): Câu truy vấn tiếng Việt.
         now (datetime, optional): Thời điểm tham chiếu, mặc định là hiện tại.
     Returns:
-        str: Ngày/tháng định dạng YYYY-MM-DD, YYYY-MM, hoặc None nếu không tìm thấy.
+        str | None: Ngày/tháng định dạng YYYY-MM-DD, YYYY-MM, hoặc None nếu không tìm thấy.
     """
     if not query or not isinstance(query, str):
         logger.error("Truy vấn không hợp lệ")
@@ -148,7 +148,7 @@ def extract_all_times(query, now=None):
         return result
 
     logger.info("Truy vấn: %s -> Không tìm thấy thời gian", query)
-    return "None"
+    return None
 
 # # Test với 50 truy vấn
 # if __name__ == "__main__":

@@ -4,97 +4,123 @@ Last updated: 2026-04-23
 
 ## Quick Scan
 
-- The repo has already chosen a hybrid architecture.
-- Business truth is deterministic, not LLM-driven.
-- Repository abstraction is intentional because website DB integration is still missing.
-- Some runtime fallbacks are accepted temporarily to keep local development possible.
+- Hybrid NLP + deterministic search is the chosen shape.
+- Business truth must not come from LLM.
+- Repository boundary stays even before real DB integration exists.
+- Graceful degradation is accepted for local dev/test.
+- Some decisions are explicitly temporary and should not be treated as final architecture.
 
 ## D-001 Hybrid NLP + Deterministic Search
 
 - Status: Accepted
-- Context: The chatbot must both interpret Vietnamese user queries and return business-valid tour results.
-- Choice: Keep a hybrid architecture: NLP for intent/entity understanding, deterministic service for tour filtering and ranking.
+- Context: The system must interpret Vietnamese queries and return business-valid tour results.
+- Choice: Keep NLP understanding separate from deterministic search/filtering.
 - Consequences:
-  - simpler to reason about than end-to-end LLM orchestration
   - easier to test business logic
-  - still requires maintaining NLP and search layers separately
+  - lower hallucination risk
+  - more components to maintain
 
 ## D-002 Business Filtering Must Not Depend On LLM
 
 - Status: Accepted
-- Context: Tour matching is business-critical and should be reproducible.
-- Choice: Use `TourSearchService` + normalized filters for matching tours.
+- Context: Tour matching is business-critical.
+- Choice: Use normalized filters + deterministic `TourSearchService`.
 - Consequences:
-  - business rules stay auditable
-  - lower risk of hallucinated matches
-  - search quality depends on normalized entities and repository quality
+  - auditable search behavior
+  - less flexible natural matching unless normalization improves
 
-## D-003 Gemini Is For Phrasing Only
+## D-003 Gemini Is Phrasing-Only
 
 - Status: Accepted
-- Context: The repo still wants natural Vietnamese responses, but not LLM-controlled business truth.
-- Choice: Gemini may phrase:
-  - missing-info prompts
-  - search intro text
-  - FAQ rephrasing
+- Context: Natural Vietnamese phrasing is useful, but not as a source of truth.
+- Choice: Gemini may phrase prompts and FAQ answers, but may not decide matches.
 - Consequences:
-  - safer use of LLM
-  - system still works without Gemini
-  - response tone can vary while business result stays stable
+  - safer runtime behavior
+  - system can fall back cleanly when Gemini is unavailable
 
-## D-004 Keep Tour Repository As An Adapter Boundary
+## D-004 Keep Repository Boundary Before Real DB Integration
 
 - Status: Accepted
-- Context: The actual website database is not present in this repo.
-- Choice: Keep `TourRepository` protocol and current `JsonTourRepository` adapter separate from search logic.
+- Context: The actual website tour data source is not in this repo yet.
+- Choice: Keep `TourRepository` protocol + adapter-based access.
 - Consequences:
-  - DB integration can be added without rewriting search service
-  - current repo still runs with sample data
-  - one more abstraction layer to maintain
+  - future DB/API integration is cleaner
+  - current repo still depends on placeholder sample data
 
 ## D-005 Graceful Runtime Degradation
 
 - Status: Accepted
-- Context: Local environments may not have all heavy ML dependencies or model artifacts installed.
-- Choice: Use optional runtime behavior:
+- Context: Local machines may not have all ML runtimes or artifacts.
+- Choice:
   - PhoBERT -> rule fallback
   - VnCoreNLP -> alias fallback
   - Gemini -> deterministic fallback
-  - FAISS FAQ -> disabled if stack is missing
+  - FAISS FAQ -> disable if stack is missing
 - Consequences:
   - easier local bootstrapping
-  - easier isolated testing
-  - behavior differs across environments if dependencies are inconsistent
+  - behavior can vary across environments
 
 ## D-006 Structured ChatResponse Is The API Contract
 
 - Status: Accepted
-- Context: Frontend rendering needs stable fields, not free-form text blobs.
-- Choice: Return `status`, `message`, `entities`, `missing_fields`, `tours`, `faq_sources`.
+- Context: Frontend needs stable fields, not free-form blobs.
+- Choice: Keep `status`, `message`, `entities`, `missing_fields`, `tours`, `faq_sources`.
 - Consequences:
-  - frontend integration is cleaner
-  - future changes should preserve or version this contract
+  - frontend integration is simpler
+  - API contract changes should be deliberate
 
 ## D-007 Require All Three Search Fields Before Searching
 
 - Status: Temporary
-- Context: Current pipeline asks for `location`, `time`, and `price` before calling tour search.
-- Choice: Keep the stricter behavior for now.
+- Context: Current pipeline only searches after `location`, `time`, and `price` are all present.
+- Choice: Keep strict gating for now.
 - Consequences:
-  - easier deterministic logic in the short term
-  - weaker UX for partial-search cases
-  - likely to be revisited soon
+  - simpler logic today
+  - weak UX
+  - likely one of the next changes
+
+## D-008 Fix Correctness Before Expanding Capability
+
+- Status: Accepted and executed in batch 1
+- Context: The repo had known correctness issues:
+  - duplicate normalization flow
+  - sentinel `"None"` handling
+  - weak request validation
+  - no reset endpoint
+- Choice: prioritize cleanup/correctness before larger behavior changes like partial search.
+- Consequences:
+  - safer next refactors
+  - product-level improvements were delayed slightly
+
+## D-009 Local Browser Compatibility Is Baseline
+
+- Status: Accepted
+- Context: The backend is intended to be consumed by a frontend during local development.
+- Choice: Keep local-dev CORS enabled as baseline API wiring.
+- Consequences:
+  - easier frontend integration in development
+  - production origin policy still needs separate hardening
 
 ## Open Decisions
 
-- How the real website tour database will be integrated
-- Whether partial search should be allowed before all fields are known
-- Whether FAQ retrieval should switch to a better Vietnamese/multilingual embedding stack
-- Whether session state should move to Redis or another shared store
+- Partial search policy:
+  - require only `location`
+  - or require `location + one optional field`
+- Real tour data integration path:
+  - SQL repository
+  - backend API repository
+  - another source
+- Whether Gemini should remain enabled for missing-info/search-intro phrasing, or be reduced further in favor of deterministic strings
+- FAQ retrieval upgrade:
+  - keep current embedding stack
+  - move to better multilingual/Vietnamese model
+- Session state:
+  - keep in-memory for local only
+  - move to Redis/shared store for multi-worker usage
 
 ## Read This Next
 
 1. `ROADMAP.md`
-2. `WORKLOG.md`
-3. `PROJECT_STATE.md`
+2. `EXECUTION_PLAN.md`
+3. `WORKLOG.md`
 

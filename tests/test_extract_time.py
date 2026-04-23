@@ -15,3 +15,6 @@ def test_extract_relative_tomorrow():
     now = datetime(2026, 4, 23)
     assert extract_all_times("Tôi muốn đặt tour ngày mai", now=now) == "2026-04-24"
 
+
+def test_extract_time_returns_none_when_missing():
+    assert extract_all_times("Tôi muốn đi tour không có ngày cụ thể") is None

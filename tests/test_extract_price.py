@@ -16,3 +16,6 @@ def test_extract_price_range_values():
 def test_extract_price_short_units():
     assert extract_price_vn("Tour 1500k đi đâu được?") == "1500000"
 
+
+def test_extract_price_returns_none_when_missing():
+    assert extract_price_vn("Tôi muốn đi tour giá hợp lý") is None

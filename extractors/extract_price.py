@@ -81,4 +81,4 @@ def extract_price_vn(query):
     Trả về số nguyên hoặc None nếu không tìm thấy.
     """
     prices = extract_price_values(query)
-    return str(max(prices)) if prices else "None"
+    return str(max(prices)) if prices else None

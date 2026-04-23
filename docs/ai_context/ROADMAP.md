@@ -4,106 +4,111 @@ Last updated: 2026-04-23
 
 ## Quick Scan
 
-- Highest priority is replacing the JSON tour adapter with real website data access.
-- Next biggest product issue is the rigid requirement to collect all three search fields before searching.
-- Model/data quality work matters, but only after the business integration path is real.
+- Cleanup batch is done.
+- First priority now: replace placeholder tour data path with a real repository integration.
+- Biggest product limitation after that: search is too strict and requires all three fields.
+- Evaluation is the next quality gate once the runtime path is more realistic.
 
 ## Now
 
-### 1. Integrate The Real Website Tour Data Source
+### 1. Real Tour Repository Integration
 
-- Goal: replace `JsonTourRepository` with a repository backed by the actual website DB or backend API.
-- Impact: high
-- Difficulty: medium to high
-- Depends on:
-  - knowing the real data source
-  - mapping fields into `schemas.tour_models.Tour`
+- Why it matters:
+  - current search path is structurally correct but data-poor
+  - `tours_sample.json` is not enough for realistic behavior
+- Expected impact: very high
+- Approximate effort: medium to high
+- Dependencies:
+  - identify real website DB or API
+  - map source fields into `Tour`
+- Success condition:
+  - `JsonTourRepository` can be swapped for a real repository
+  - `/chat` returns real tours from non-sample data
 
-### 2. Support Partial Search Before All Fields Are Present
+### 2. Partial Search
 
-- Goal: allow useful search when only some filters are known, especially `location + time` or `location + price`.
-- Impact: high
-- Difficulty: medium
-- Depends on:
-  - clear UX rules for missing fields
-  - small refactor of `_missing_fields()` and search policy
+- Why it matters:
+  - current UX is overly strict
+  - many real users will provide only destination + one other constraint
+- Expected impact: high
+- Approximate effort: medium
+- Dependencies:
+  - cleanup batch completed
+  - agreement on desired UX
+- Success condition:
+  - search runs when `location` is present and at least one optional filter exists
+  - response clearly indicates missing optional filters
 
-### 3. Add Evaluation For Search And FAQ
+### 3. Evaluation Harness For Intent, FAQ, And Search
 
-- Goal: stop relying only on ad hoc manual checks.
-- Impact: high
-- Difficulty: medium
-- Depends on:
-  - a small gold set of real queries
-  - expected tours / expected FAQ answers
+- Why it matters:
+  - current tests verify correctness, not model/search quality
+- Expected impact: high
+- Approximate effort: medium
+- Dependencies:
+  - small gold datasets
+- Success condition:
+  - repo contains repeatable evaluation scripts and baseline metrics
 
 ## Next
 
-### 4. Improve Destination Normalization And Slot Coverage
+### 4. Better Destination Catalog / Normalization
 
-- Goal: expand alias coverage and reduce misses from spelling/variant forms.
-- Impact: medium
-- Difficulty: medium
-- Depends on:
-  - curated place alias list
-  - maybe extracting destination catalog from real tour data
+- Why it matters:
+  - current alias map is too small
+- Expected impact: medium
+- Approximate effort: low to medium
+- Dependencies:
+  - preferably real tour data or curated destination catalog
+- Success condition:
+  - normalization covers a much wider place set without hardcoding everything in Python
 
-### 5. Revisit FAQ Retrieval Model And Threshold
+### 5. FAQ Retrieval Upgrade
 
-- Goal: improve FAQ quality for Vietnamese queries.
-- Impact: medium
-- Difficulty: medium
-- Depends on:
-  - retrieval evaluation set
-  - trying a better multilingual/Vietnamese embedding model
-
-### 6. Separate Intent And Slot Policy More Explicitly
-
-- Goal: reduce drift between classifier labels and actual business behavior.
-- Impact: medium
-- Difficulty: medium
-- Depends on:
-  - deciding whether some intents are redundant once partial search exists
+- Why it matters:
+  - current embedding choice and threshold are weakly justified
+- Expected impact: medium
+- Approximate effort: medium
+- Dependencies:
+  - FAQ evaluation harness
+- Success condition:
+  - model/threshold choice is backed by measured retrieval quality
 
 ## Later
 
-### 7. Externalize Session Storage
+### 6. Session Externalization
 
-- Goal: move from in-memory sessions to Redis or another shared store.
-- Impact: medium
-- Difficulty: medium
-- Depends on:
-  - deployment target
-  - multi-worker or multi-instance requirements
+- Why it matters:
+  - current in-memory state is per-process only
+- Expected impact: medium
+- Approximate effort: medium
+- Dependencies:
+  - deployment/runtime choice
+- Success condition:
+  - session behavior is stable across workers/restarts
 
-### 8. Add Better Observability
+### 7. Observability
 
-- Goal: track intent path, extractor output, search filters, FAQ hit/miss, latency.
-- Impact: medium
-- Difficulty: low to medium
-- Depends on:
-  - deciding a logging/metrics stack
+- Why it matters:
+  - debugging current hybrid path is still mostly manual
+- Expected impact: medium
+- Approximate effort: low to medium
+- Dependencies:
+  - logging/metrics approach
+- Success condition:
+  - request path, filters, and retrieval/search outcomes are visible in logs/metrics
 
-### 9. Tighten Dataset/Artifact Lifecycle
+## Intentionally Postponed
 
-- Goal: make training/index regeneration less ad hoc.
-- Impact: medium
-- Difficulty: medium
-- Depends on:
-  - choosing where model artifacts live
-  - deciding how to version data and index outputs
+- vector search over tours
+- LLM-driven business search
+- major service decomposition
 
-## Not Urgent Yet
-
-- Complex semantic/vector search over tours
-- End-to-end LLM orchestration for business search
-- Aggressive microservice decomposition
-
-Those would add complexity before the repo has a real tour data integration and a solid evaluation loop.
+These are not the highest-leverage changes for the current repo state.
 
 ## Read This Next
 
-1. `WORKLOG.md`
-2. `DECISIONS.md`
+1. `EXECUTION_PLAN.md`
+2. `WORKLOG.md`
 3. `PROJECT_STATE.md`
 

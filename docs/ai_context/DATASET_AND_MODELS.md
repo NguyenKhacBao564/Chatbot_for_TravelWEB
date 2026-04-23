@@ -5,20 +5,19 @@ Last updated: 2026-04-23
 ## Quick Scan
 
 - Intent dataset: `data/processed/intent_merged.json` with 11,904 samples.
-- FAQ data: `data/processed/faq_cleaned.json` with 3,504 entries.
-- FAQ metadata: `faq_metadata.json` with 3,504 indexed entries.
-- Tour data in repo: `data/tours_sample.json` with 6 sample tours only.
+- FAQ dataset: `data/processed/faq_cleaned.json` with 3,504 entries.
+- FAQ runtime metadata: `faq_metadata.json` with 3,504 entries.
+- Tour runtime data in repo: `data/tours_sample.json` with 6 sample tours.
 - Main runtime models:
   - PhoBERT for intent
   - `all-MiniLM-L6-v2` for FAQ retrieval
-  - rule-based extractors for time/price
+  - rule-based extractors for time and price
 
 ## Intent Data
 
 - File: `data/processed/intent_merged.json`
-- Purpose: training data for intent classifier
-- Observed size: 11,904 samples
-- Current intent labels in code:
+- Purpose: training data for PhoBERT intent classifier
+- Current labels in runtime:
   - `find_tour_with_location`
   - `find_tour_with_time`
   - `find_tour_with_price`
@@ -28,10 +27,18 @@ Last updated: 2026-04-23
   - `find_with_all`
   - `out_of_scope`
 
-Notes:
+### Important limitations
 
-- Dataset generation scripts in `scripts/` indicate heavy synthetic / paraphrased generation.
-- This is useful for bootstrap training, but distribution may differ from real user traffic.
+- Dataset generation scripts suggest heavy synthetic / paraphrased generation.
+- The repo does not include an evaluation set proving these samples resemble real user traffic.
+- Likely consequence:
+  - PhoBERT may look acceptable on synthetic phrasing but still behave weakly on real traffic.
+
+### Verified train-vs-inference mismatch
+
+- Training script `training/phobert_intent_finetuned_train.py` segments text with VnCoreNLP before tokenization.
+- Runtime inference in `pipelines/tour_pipeline.py` sends raw query text directly to tokenizer.
+- Training and inference preprocessing are therefore not identical.
 
 ## FAQ Data
 
@@ -40,76 +47,68 @@ Notes:
 - FAISS index file: `faq_index.faiss`
 - Retrieval model in code: `SentenceTransformer("all-MiniLM-L6-v2")`
 
-Notes:
+### Important limitations
 
-- FAQ path is independent from tour search.
-- Current retrieval returns metadata fields:
-  - `question`
-  - `answer`
-  - `tags`
-  - `score`
-  - `source`
+- `all-MiniLM-L6-v2` is not a Vietnamese-specific model.
+- Current retrieval threshold is a fixed constant, not calibrated from an eval set.
+- FAQ quality depends heavily on:
+  - embedding choice
+  - threshold choice
+  - FAQ data cleanliness
 
 ## Tour Data
 
-- Current runtime source in repo: `data/tours_sample.json`
+- Current runtime source: `data/tours_sample.json`
 - Observed size: 6 tours
-- Purpose: adapter data for `JsonTourRepository`
-- Important limitation: this is not the website database
+- Purpose: placeholder adapter data for `JsonTourRepository`
 
-Current repo does not contain:
+What this means:
 
-- SQL schema for tours
-- ORM models
-- API client for the website backend
-- migration/config for production tour storage
+- enough to prove the business-search shape
+- not enough to judge ranking quality
+- not a substitute for real website integration
 
 ## Runtime Artifacts
 
-Required or effectively required for full behavior:
+Effectively required for full behavior:
 
 - `training/phobert_intent_finetuned/`
 - `faq_metadata.json`
 - `faq_index.faiss`
 
-Can be regenerated:
+Regenerable:
 
 - `faq_metadata.json`
 - `faq_index.faiss`
-- PhoBERT artifact, if training data + training environment are available
+- PhoBERT artifact, if training environment is available
 
-Fallback behavior if artifacts are missing:
+Fallback behavior:
 
 - no PhoBERT -> rule-based intent
 - no FAISS stack -> FAQ retrieval disabled
-- no Gemini key/SDK -> deterministic response text fallback
+- no Gemini key/SDK -> deterministic phrasing fallback
+- no VnCoreNLP -> alias-based location fallback
 
-## Model / Extractor Inventory
+## Extractor Limitations
 
-- Intent:
-  - PhoBERT classifier from local artifact
-- FAQ:
-  - sentence-transformer `all-MiniLM-L6-v2`
 - Location:
-  - VnCoreNLP NER if available
-  - alias fallback otherwise
+  - current extractor returns only the first detected location
+  - no explicit departure vs destination split
 - Time:
-  - regex + relative-date rules
+  - handles exact day and month cases
+  - does not support rich natural ranges well
+  - now returns real `None` on miss in the main flow
 - Price:
-  - rule-based numeric/unit parsing
-
-## Known Limitations
-
-- Intent dataset likely over-represents synthetic phrasing.
-- FAQ embedding model is not specialized for Vietnamese.
-- Time normalization handles month and exact date forms, but not rich natural ranges.
-- Destination alias list is small and manually maintained.
-- Tour sample data is too small to evaluate ranking quality seriously.
-- Search currently assumes price is usually a ceiling, which is reasonable but not universally true.
+  - deterministic and testable
+  - returns a single main value in extractor API
+  - now returns real `None` on miss in the main flow
+- Normalization:
+  - alias map is small and hardcoded
+  - no fuzzy matching yet
 
 ## Read This Next
 
 1. `DECISIONS.md`
 2. `ROADMAP.md`
-3. Root `README.md`
+3. `EXECUTION_PLAN.md`
 

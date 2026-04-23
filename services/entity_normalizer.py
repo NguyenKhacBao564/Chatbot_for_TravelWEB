@@ -60,7 +60,7 @@ def extract_destination_from_text(query: str) -> Tuple[Optional[str], Optional[s
 
 
 def parse_time_range(raw_time: str | None) -> Tuple[Optional[date], Optional[date]]:
-    if not raw_time or raw_time == "None":
+    if not raw_time:
         return None, None
 
     if re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw_time):
@@ -83,7 +83,7 @@ def parse_price_filter(query: str, raw_price: str | None) -> Tuple[Optional[int]
         return min(prices), max(prices)
 
     price = None
-    if raw_price and raw_price != "None" and str(raw_price).isdigit():
+    if raw_price and str(raw_price).isdigit():
         price = int(raw_price)
     elif prices:
         price = max(prices)
@@ -111,8 +111,8 @@ def normalize_entities(raw_entities: dict, query: str) -> ExtractedEntities:
 
     return ExtractedEntities(
         location=location,
-        time=None if raw_time == "None" else raw_time,
-        price=None if raw_price == "None" else raw_price,
+        time=raw_time,
+        price=raw_price,
         destination_normalized=destination_normalized,
         date_start=date_start,
         date_end=date_end,
@@ -132,4 +132,3 @@ def to_search_filters(entities: ExtractedEntities) -> TourSearchFilters:
         raw_time=entities.time,
         raw_price=entities.price,
     )
-

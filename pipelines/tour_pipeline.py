@@ -3,8 +3,6 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
-from pydantic import BaseModel
-
 try:
     import torch
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -31,8 +29,10 @@ from services.tour_search_service import TourSearchService
 logger = logging.getLogger(__name__)
 
 
-class ResetRequest(BaseModel):
-    user_id: str = "default_user"
+def model_to_dict(model):
+    if hasattr(model, "model_dump"):
+        return model.model_dump()
+    return model.dict()
 
 
 class SessionManager:
@@ -157,8 +157,8 @@ class TourRetrievalPipeline:
     def _extract_intent_fallback(self, query):
         query_lower = query.lower()
         has_location = bool(extract_destination_from_text(query)[1])
-        has_time = extract_all_times(query) not in (None, "None")
-        has_price = extract_price_vn(query) != "None"
+        has_time = extract_all_times(query) is not None
+        has_price = extract_price_vn(query) is not None
         looks_like_tour_query = any(
             keyword in query_lower
             for keyword in ["tour", "du lịch", "đi ", "khởi hành", "giá", "ngân sách"]
@@ -190,7 +190,7 @@ class TourRetrievalPipeline:
 
         if intent in self.LOCATION_INTENTS:
             extracted_location = extract_location(query)
-            if extracted_location != "None":
+            if extracted_location is not None:
                 location = extracted_location
                 session["location"] = location
                 logger.debug("Extracted location=%s", location)
@@ -203,26 +203,26 @@ class TourRetrievalPipeline:
 
         if intent in self.TIME_INTENTS:
             extracted_time = extract_all_times(query)
-            if extracted_time != "None":
+            if extracted_time is not None:
                 time = extracted_time
                 session["time"] = time
                 logger.debug("Extracted time=%s", time)
 
         if intent in self.PRICE_INTENTS:
             extracted_price = extract_price_vn(query)
-            if extracted_price != "None":
+            if extracted_price is not None:
                 price = extracted_price
                 session["price"] = price
                 logger.debug("Extracted price=%s", price)
 
         raw_entities = {"location": location, "time": time, "price": price}
         normalized = normalize_entities(raw_entities, query)
-        if not location and normalized.location:
+        if normalized.location:
             session["location"] = normalized.location
 
         session["last_updated"] = datetime.now()
         session["search_history"].append({"query": query, "intent": intent})
-        return {"location": session["location"], "time": time, "price": price}
+        return normalized
 
     def reset_session(self, user_id):
         self.session_manager.reset_session(user_id)
@@ -268,8 +268,7 @@ class TourRetrievalPipeline:
             )
             return self._to_response_dict(response)
 
-        raw_entities = self.extract_entities(query, intent, user_id)
-        entities = normalize_entities(raw_entities, query)
+        entities = self.extract_entities(query, intent, user_id)
         missing_fields = self._missing_fields(entities)
 
         if missing_fields:
@@ -322,7 +321,7 @@ class TourRetrievalPipeline:
         prompt = (
             "Viết một câu tiếng Việt lịch sự để hỏi khách cung cấp thêm thông tin còn thiếu "
             f"cho việc tìm tour. Thông tin còn thiếu: {missing_text}. "
-            f"Thông tin đã có: {entities.dict()}."
+            f"Thông tin đã có: {model_to_dict(entities)}."
         )
         return get_genai_response(prompt, fallback=fallback) or fallback
 
@@ -337,7 +336,7 @@ class TourRetrievalPipeline:
         prompt = (
             "Viết một câu mở đầu ngắn bằng tiếng Việt trước khi hiển thị danh sách tour. "
             "Không thêm thông tin tour cụ thể. "
-            f"Số tour tìm được: {total_results}. Bộ lọc: {entities.dict()}."
+            f"Số tour tìm được: {total_results}. Bộ lọc: {model_to_dict(entities)}."
         )
         return get_genai_response(prompt, fallback=fallback) or fallback
 

@@ -4,73 +4,78 @@ Last updated: 2026-04-23
 
 ## Quick Scan
 
-- Project: Vietnamese travel chatbot backend with hybrid NLP + deterministic tour search.
-- API entrypoints: `GET /health`, `POST /chat`.
-- Main orchestrator: `server.py` -> `pipelines/tour_pipeline.py` -> `ChatResponse`.
-- Search works against structured tour data, but current repo only ships a JSON adapter with 6 sample tours.
+- Project: Vietnamese travel chatbot backend.
+- Direction is still correct: hybrid NLP + deterministic business search.
+- API entrypoints today: `GET /health`, `POST /chat`, `POST /reset`.
+- Main runtime path: `server.py` -> `TourRetrievalPipeline` -> structured `ChatResponse`.
+- Tour search works, but only against a JSON adapter with 6 sample tours.
 - FAQ retrieval is separate from tour search and depends on FAISS artifacts plus `all-MiniLM-L6-v2`.
-- Several components are optional at runtime:
-  - PhoBERT intent -> rule fallback if model/deps are missing.
-  - VnCoreNLP location extraction -> alias fallback if runtime/deps are missing.
-  - Gemini phrasing -> deterministic fallback strings if `GOOGLE_API_KEY` or SDK is missing.
-- Current search still requires all three fields before searching: `location`, `time`, `price`.
 
-## What This Repo Is
+## What Is Working Now
 
-- A backend-only prototype/refactor for a Vietnamese travel chatbot.
-- The current goal is not open-domain chat.
-- The useful path is:
-  - detect user intent
-  - extract/normalize search entities
-  - run deterministic tour search
-  - return structured results for a frontend
+- Structured `/chat` response for frontend consumption.
+- `/reset` endpoint for clearing per-user session state.
+- Basic request validation on `/chat`.
+- Local-development CORS configuration.
+- Intent path:
+  - PhoBERT if local artifact + runtime deps are available
+  - rule fallback otherwise
+- Entity extraction for location, time, and price.
+- Entity normalization into:
+  - `destination_normalized`
+  - `date_start`
+  - `date_end`
+  - `price_min`
+  - `price_max`
+- Deterministic tour filtering/ranking in `TourSearchService`.
+- FAQ retrieval with metadata when FAISS stack is available.
+- Test suite covering API smoke, validation, parsers, reset flow, session isolation, and basic tour search flow.
 
-## Current State
+## What Is Fallback / Mock / Adapter
 
-- Implemented:
-  - FastAPI app and structured `/chat` response
-  - hybrid intent path: PhoBERT or rule fallback
-  - extractors for location, time, price
-  - entity normalization to business filters
-  - FAQ retrieval with metadata
-  - deterministic tour filtering/ranking
-  - tests for API smoke, parsers, session isolation, tour search flow
-- Present but not production-ready:
-  - `JsonTourRepository` backed by `data/tours_sample.json`
-  - in-memory session storage
-  - small destination alias map
-  - simple ranking heuristic
+- `JsonTourRepository` backed by `data/tours_sample.json`
+  - this is not the website database
+  - current sample size is 6 tours only
+- Gemini
+  - phrasing only
+  - deterministic fallback text is used if key or SDK is missing
+- VnCoreNLP location extraction
+  - alias fallback is used if VnCoreNLP is unavailable
+- PhoBERT intent
+  - rule fallback is used if model artifact or runtime deps are unavailable
+- FAQ retrieval
+  - disabled if FAISS/numpy/sentence-transformers are unavailable
 
-## What Is Real vs Mock
+## Known Code-Level Risks
 
-- Real in repo:
-  - `data/processed/intent_merged.json`
-  - `data/processed/faq_cleaned.json`
-  - `faq_metadata.json`
-  - FAISS index generation script
-  - deterministic tour search code
-- Mock / adapter / fallback:
-  - website tour database integration is not present in this repo
-  - `data/tours_sample.json` is only placeholder data
-  - PhoBERT model artifact is expected locally, not shipped in repo
-  - FAQ retrieval can be disabled if dependencies/artifacts are missing
+- `TourRetrievalPipeline` is still a large orchestrator and remains the main coupling point.
+- Session state is:
+  - in-memory
+  - per-process
+  - unsynchronized
+- Search is still gated on all three fields: `location`, `time`, `price`.
+- `extract_location()` still returns only the first detected location.
+- Destination normalization is still based on a small hardcoded alias map.
+- FAQ retrieval still uses:
+  - a fixed threshold
+  - a non-Vietnamese-specific embedding model
 
-## Main Technical Risks
+## Current Engineering Focus
 
-- Search flow is blocked until all three fields are filled, which is stricter than many real chatbot UX flows.
-- Tour repository is not connected to the actual website database yet.
-- Session state is process-local only.
-- FAQ retrieval uses a fixed distance threshold and a non-Vietnamese-specific embedding model.
-- Alias-based destination fallback is narrow and will miss many place variants.
+- Next focus:
+  - partial search when `location` is present
+  - more realistic tour data access beyond the current JSON adapter
+  - evaluation harness for intent, FAQ, and search quality
 
 ## Read This Next
 
-1. `ARCHITECTURE.md`
-2. `DATASET_AND_MODELS.md`
-3. `DECISIONS.md`
+1. `EXECUTION_PLAN.md`
+2. `ARCHITECTURE.md`
+3. `DATASET_AND_MODELS.md`
 
 ## Related Files
 
-- Root `README.md` for setup and human-facing architecture summary
-- `REFACTOR_NOTES.md` for the recent backend refactor scope
+- Root `README.md`
+- `REFACTOR_NOTES.md`
+- `ampfeedback.md`
 

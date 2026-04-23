@@ -90,6 +90,6 @@ def extract_location(query):
             return location
         
         # Nếu không tìm thấy địa điểm, trả về None
-        return "None"
+        return None
     else:
-        return "None"
+        return None

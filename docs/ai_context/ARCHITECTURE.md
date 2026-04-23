@@ -5,110 +5,107 @@ Last updated: 2026-04-23
 ## Quick Scan
 
 - Request flow: FastAPI -> `TourRetrievalPipeline` -> NLP path -> business search or FAQ path -> `ChatResponse`.
-- Gemini is a phrasing layer only.
+- Gemini is phrasing-only.
 - Deterministic business logic lives in `services/tour_search_service.py`.
 - Tour data access is abstracted behind `repositories/tour_repository.py`.
-- Biggest current coupling: one orchestrator still coordinates most runtime decisions.
+- Main technical debt: orchestration is centralized in one pipeline class.
 
-## Request Lifecycle
+## Runtime Flow
 
 1. `server.py` receives `POST /chat` with `query` and `user_id`.
 2. `TourRetrievalPipeline.get_tour_response()` classifies intent.
-3. Pipeline extracts raw entities from the query and current session:
+3. Pipeline extracts entities from query + session:
    - location
    - time
    - price
-4. `services/entity_normalizer.py` converts raw values into business filters:
-   - `destination_normalized`
-   - `date_start`
-   - `date_end`
-   - `price_min`
-   - `price_max`
+4. `services/entity_normalizer.py` converts extracted values into business filters.
 5. If required fields are missing, pipeline returns `status="missing_info"`.
-6. If intent is `out_of_scope`, pipeline uses FAQ retrieval and returns `status="faq"`.
+6. If intent is `out_of_scope`, pipeline routes into FAQ retrieval and returns `status="faq"`.
 7. If entities are complete, pipeline builds `TourSearchFilters` and calls `TourSearchService.search()`.
-8. Pipeline returns `ChatResponse` with:
-   - `status`
-   - `message`
-   - `entities`
-   - `missing_fields`
-   - `tours`
-   - `faq_sources`
+8. Pipeline returns `ChatResponse`.
 
-## NLP Layer
+## Layer Responsibilities
+
+### API Layer
+
+- File: `server.py`
+- Owns:
+  - FastAPI app
+  - endpoint wiring
+  - pipeline singleton creation
+  - request validation
+  - local-dev CORS
+- Current caveats:
+  - validation is basic rather than business-aware
+  - pipeline is still a module-level singleton
+  - CORS policy is local-dev friendly, not production-specific
+
+### NLP Layer
 
 - Intent:
-  - primary path: PhoBERT classifier loaded from `training/phobert_intent_finetuned`
-  - fallback path: rule-based intent inference from query content
+  - primary: PhoBERT classifier
+  - fallback: heuristic inference
 - Entity extraction:
-  - location: `extractors/extract_location.py`
-  - time: `extractors/extract_time.py`
-  - price: `extractors/extract_price.py`
-- Normalization:
-  - destination aliasing and slugging
-  - date range conversion from normalized extractor output
-  - price ceiling/range interpretation
+  - location: VnCoreNLP or alias fallback
+  - time: regex + relative date rules
+  - price: deterministic parsing
 - FAQ retrieval:
-  - `pipelines/retrieval.py`
   - FAISS + metadata + embedding model
 
-## Business Search Layer
+### Business Search Layer
 
-- Repository:
-  - `TourRepository` protocol defines read-only access
-  - `JsonTourRepository` is the current adapter
-- Search service:
-  - exact normalized destination filter first
-  - date window filter second
-  - price min/max filter third
-  - simple weighted ranking after filtering
-
-Current ranking inputs:
-
-- destination match
-- date closeness
-- price closeness
-- optional `rating`
-- optional `popularity`
+- `TourRepository` protocol defines read-only tour access.
+- `JsonTourRepository` is the current adapter.
+- `TourSearchService` applies deterministic filtering and ranking.
 
 ## Gemini Boundary
 
-Gemini is currently allowed to:
+Allowed:
 
-- phrase missing-info prompts
-- phrase search result intro text
-- rephrase FAQ answer text
+- phrasing missing-info prompts
+- phrasing search intro text
+- rephrasing FAQ answers
 
-Gemini is not supposed to:
+Not allowed:
 
-- choose which tours match the query
-- override deterministic filters
-- invent business facts not present in repository/FAQ data
+- deciding which tours match the query
+- overriding deterministic filters
+- inventing business facts or tour attributes
 
-## Strengths
+## Verified Technical Debt
+
+- `TourRetrievalPipeline` is still a God Object by responsibility count:
+  - intent loading/inference
+  - session handling
+  - entity extraction
+  - FAQ routing
+  - tour search orchestration
+  - response formatting
+- Session design is convenient for local dev but weak for shared runtime:
+  - per-process memory
+  - no lock
+  - no cleanup job
+- Destination normalization is hardcoded and narrow.
+- `extract_location()` only returns the first detected location and does not distinguish departure vs destination.
+- FAQ threshold is still a hardcoded constant in `RetrievalPipeline`.
+- `RetrievalPipeline.get_retrieved_context()` is now legacy-style helper logic; main flow uses `retrieve()`.
+
+## Architecture Strengths
 
 - Clear separation between NLP interpretation and business filtering.
-- Structured response format is frontend-friendly.
-- Repository abstraction makes future DB integration cleaner.
-- Runtime degrades gracefully when some optional dependencies are missing.
+- Structured response contract is already frontend-friendly.
+- Repository boundary is in place before real DB integration.
+- Graceful degradation keeps local dev/test possible.
 
-## Weak Points
+## Architecture Weaknesses
 
-- `TourRetrievalPipeline` is still a broad orchestrator and holds multiple responsibilities.
-- Missing-info policy is rigid: search waits for all fields instead of supporting partial search.
-- Session storage is not externalized.
-- FAQ and tour flows still share orchestration state rather than being isolated services.
-
-## Technical Debt / Coupling
-
-- Destination normalization depends on a small hardcoded alias map.
-- FAQ retrieval threshold is a magic constant in `RetrievalPipeline`.
-- Rule fallback behavior and PhoBERT behavior may drift over time.
-- Search service assumes repository returns already-clean tour rows.
+- Search policy is currently too rigid for realistic UX.
+- FAQ and tour flows are still coordinated inside one class rather than smaller use-case services.
+- Repo still lacks a real website-tour data integration path.
 
 ## Read This Next
 
 1. `DATASET_AND_MODELS.md`
 2. `DECISIONS.md`
-3. Root `README.md`
+3. `EXECUTION_PLAN.md`
 
