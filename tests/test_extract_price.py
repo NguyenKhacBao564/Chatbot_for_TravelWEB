@@ -5,6 +5,10 @@ def test_extract_price_million_budget():
     assert extract_price_vn("Tôi muốn đi Đà Lạt khoảng 5 triệu") == "5000000"
 
 
+def test_extract_price_short_million_budget():
+    assert extract_price_vn("ngân sách 3tr") == "3000000"
+
+
 def test_extract_price_half_million():
     assert extract_price_vn("Tour tầm 2 triệu rưỡi có không?") == "2500000"
 
@@ -19,3 +23,9 @@ def test_extract_price_short_units():
 
 def test_extract_price_returns_none_when_missing():
     assert extract_price_vn("Tôi muốn đi tour giá hợp lý") is None
+
+
+def test_extract_price_ignores_age_people_and_duration_counts():
+    assert extract_price_vn("Trẻ em dưới 5 tuổi có phải mua vé không?") is None
+    assert extract_price_vn("Tôi đi 2 người") is None
+    assert extract_price_vn("Tour 3 ngày có lịch trình thế nào?") is None

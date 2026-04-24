@@ -1,6 +1,6 @@
 # Execution Plan
 
-Last updated: 2026-04-24
+Last updated: 2026-04-25
 
 ## Quick Scan
 
@@ -8,6 +8,7 @@ Last updated: 2026-04-24
 - Batch 1 cleanup/correctness is complete.
 - Batch 2 partial search is complete.
 - Batch 3 routing/session guard is complete.
+- Batch 4 FAQ routing hardening and price false-positive fix is complete.
 - Scope: next 1-2 implementation batches only.
 - Non-goal: no full rewrite, no real DB integration in this sprint, no LLM-driven search logic.
 
@@ -16,7 +17,7 @@ Last updated: 2026-04-24
 - Make the current runtime more useful before real DB integration lands.
 - Keep cleanup gains from batch 1 stable.
 - Keep partial search stable.
-- Stop knowledge/FAQ-like queries from polluting tour-search session state.
+- Stop knowledge/FAQ-like queries and non-money quantities from polluting tour-search session state.
 
 ## Batch 1 — Cleanup And Correctness
 
@@ -80,7 +81,55 @@ Last updated: 2026-04-24
   - no FAQ embedding/model replacement
   - no TravelWeb integration changes
 
-## Batch 4 — TravelWeb Contract Verification
+## Batch 4 — FAQ Routing Hardening And Price False Positives
+
+- Status: Completed
+- Purpose:
+  - handle more valid travel FAQ/service phrasings without routing them into tour search
+  - stop short non-money quantities from being treated as budgets
+- Files touched:
+  - `pipelines/tour_pipeline.py`
+  - `extractors/extract_price.py`
+  - `tests/test_pipeline_sessions.py`
+  - `tests/test_extract_price.py`
+  - docs/project memory
+- Acceptance criteria:
+  - `Hà Nội có những quán cà phê nổi tiếng nào nên ghé thăm?` returns FAQ/knowledge behavior
+  - `Tôi có thể mang theo thú cưng khi đi tour không?` returns FAQ/policy behavior
+  - `Tour có wifi trên xe không?` does not trigger tour search
+  - `Trẻ em dưới 5 tuổi có phải mua vé không?` does not parse `5` as budget
+  - explicit search query `Có tour nào Đà Lạt ăn uống ngon không` still enters search flow
+  - Playwright UI verification on `localhost:3000` confirms the user-facing behavior
+- Result:
+  - broader deterministic FAQ candidate policy
+  - metadata FAQ ranking now includes lightweight lexical overlap scoring
+  - price extractor requires explicit money units/suffixes or large currency-like numbers
+  - TravelWeb UI showed FAQ answers for cafe and child-ticket questions
+  - TravelWeb UI showed `no_results` for full Dalat search because MSSQL had no matching tour, while Python sample search still returned results directly
+- Non-goals:
+  - no PhoBERT training
+  - no real DB integration
+  - no FAQ embedding replacement
+
+## Batch 5 — Component Health Reporting
+
+- Status: Next recommended batch
+- Purpose:
+  - make `/health` report degraded components instead of only `{"status":"ok"}`
+- Likely files to touch:
+  - `server.py`
+  - `pipelines/tour_pipeline.py`
+  - `tests/test_api.py`
+- Acceptance criteria:
+  - health reports FAQ retrieval availability
+  - health reports intent model vs rule fallback
+  - health reports tour search/repository availability
+  - response stays lightweight and does not perform slow model inference
+- Non-goals:
+  - no external monitoring stack
+  - no startup hard-fail for optional Gemini
+
+## Batch 6 — TravelWeb Contract Verification
 
 - Purpose:
   - verify how the Express backend and React UI consume `ChatResponse`
@@ -98,7 +147,7 @@ Last updated: 2026-04-24
 - Non-goals:
   - no guessed MSSQL integration without the actual repo
 
-## Batch 5 — Repository Readiness And Richer Fixtures
+## Batch 7 — Repository Readiness And Richer Fixtures
 
 - Purpose:
   - reduce the gap between current JSON adapter behavior and realistic search scenarios
@@ -121,7 +170,7 @@ Last updated: 2026-04-24
   - no guessed DB integration
   - no FAQ model change yet
 
-## Batch 6 — Real Repository Integration When Source Details Exist
+## Batch 8 — Real Repository Integration When Source Details Exist
 
 - Trigger:
   - concrete website DB or API access details are available
@@ -140,10 +189,10 @@ Last updated: 2026-04-24
 
 ## Intentionally Postponed
 
-- FAQ embedding stack replacement
 - session externalization
 - evaluation harness
 - observability work
+  - except lightweight `/health` component reporting
 
 These matter, but they are not all actionable in the current repo state.
 
@@ -152,9 +201,9 @@ These matter, but they are not all actionable in the current repo state.
 After batch 5, the repo should be in this state:
 
 - partial-search behavior remains stable
-- knowledge routing remains stable
+- knowledge routing and price guards remain stable
+- `/health` exposes component state without slowing normal startup
 - repository contract is still clean
-- richer fixtures and tests make the next integration step safer
 
 ## Read This Next
 

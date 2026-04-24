@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
@@ -116,6 +117,11 @@ class TourRetrievalPipeline:
         "an-uong",
         "am-thuc",
         "dac-san",
+        "ca-phe",
+        "quan-ca-phe",
+        "quan-an",
+        "nha-hang",
+        "phai-thu",
         # weather
         "thoi-tiet",
         "khi-hau",
@@ -149,10 +155,13 @@ class TourRetrievalPipeline:
         "choi-gi",
         "gi-choi",
         "di-dau",
+        "nen-di",
+        "nen-ghe",
         "tham-quan-gi",
         "gi-vui",
         "gi-hay",
         "gi-dep",
+        "noi-tieng",
         "o-dau",
         "check-in",
         "dia-diem",
@@ -198,6 +207,12 @@ class TourRetrievalPipeline:
         "dat-phong",
         "visa",
         "ho-chieu",
+        "thu-cung",
+        "wifi",
+        "tre-em",
+        "tre-nho",
+        "do-tuoi",
+        "mua-ve",
     }
     # Patterns that signal a service/policy FAQ even when "tour" is present
     SERVICE_QUERY_PATTERNS = {
@@ -228,9 +243,27 @@ class TourRetrievalPipeline:
         "bao-gom",
         "bua-an",
         "an-chay",
+        "thu-cung",
+        "wifi",
+        "tre-em",
+        "tre-nho",
+        "do-tuoi",
+        "mua-ve",
     }
     FAQ_QUERY_TAG_PATTERNS = {
-        "food": {"an-gi", "mon-gi", "mon-an", "an-uong", "am-thuc", "dac-san"},
+        "food": {
+            "an-gi",
+            "mon-gi",
+            "mon-an",
+            "an-uong",
+            "am-thuc",
+            "dac-san",
+            "ca-phe",
+            "quan-ca-phe",
+            "quan-an",
+            "nha-hang",
+            "phai-thu",
+        },
         "weather": {
             "thoi-tiet",
             "khi-hau",
@@ -272,12 +305,15 @@ class TourRetrievalPipeline:
         "service": {
             "ho-tro", "dich-vu", "phien-dich", "huong-dan-vien",
             "hanh-ly", "khach-san", "dat-phong", "dua-don", "san-bay",
-            "don-tien", "bao-gom", "bua-an", "an-chay",
+            "don-tien", "bao-gom", "bua-an", "an-chay", "thu-cung", "wifi",
         },
         "tour_schedule_changes": {"doi-lich", "thay-doi-lich", "thay-doi", "rut-ngan"},
         "tour_cancellation_refund": {"huy-tour", "hoan-tien", "chinh-sach"},
-        "tour_booking_conditions": {"dat-coc", "thu-tuc", "dieu-kien"},
-        "tour_customer_support": {"khieu-nai", "ho-tro"},
+        "tour_booking_conditions": {
+            "dat-coc", "thu-tuc", "dieu-kien", "tre-em", "tre-nho",
+            "do-tuoi", "mua-ve",
+        },
+        "tour_customer_support": {"khieu-nai", "ho-tro", "thu-cung", "wifi"},
         "payment": {"thanh-toan", "tra-gop", "dat-coc"},
         "visa": {"visa", "ho-chieu"},
     }
@@ -312,6 +348,48 @@ class TourRetrievalPipeline:
         "lich-khoi-hanh",
         "gia-tour",
         "book-tour",
+    }
+    FAQ_CANDIDATE_QUERY_PATTERNS = {
+        "co-nhung",
+        "co-gi",
+        "co-phai",
+        "nen-ghe",
+        "nen-di",
+        "noi-tieng",
+        "phai-thu",
+        "phu-hop",
+        "duoc-khong",
+        "khong",
+        "nao",
+        "bao-nhieu",
+    }
+    FAQ_TERM_STOPWORDS = {
+        "toi",
+        "ban",
+        "em",
+        "anh",
+        "chi",
+        "co",
+        "khong",
+        "duoc",
+        "the",
+        "nao",
+        "gi",
+        "la",
+        "ve",
+        "tour",
+        "guide",
+        "di",
+        "khi",
+        "trong",
+        "cua",
+        "cho",
+        "voi",
+        "mot",
+        "nhung",
+        "cac",
+        "neu",
+        "muon",
     }
 
     def __init__(
@@ -437,11 +515,25 @@ class TourRetrievalPipeline:
         return cls._contains_any_pattern(cleaned, cls.EXPLICIT_TOUR_QUERY_PATTERNS)
 
     @classmethod
-    def _should_route_to_faq(cls, query: str) -> bool:
-        # Service/policy queries ALWAYS go to FAQ, even if "tour" is present
+    def _looks_like_travel_faq_candidate(cls, query: str) -> bool:
+        query_slug = cls._query_slug(query)
+        has_location = bool(extract_destination_from_text(query)[1])
+        return has_location and cls._contains_any_pattern(
+            query_slug,
+            cls.FAQ_CANDIDATE_QUERY_PATTERNS,
+        )
+
+    @classmethod
+    def _looks_like_faq_candidate(cls, query: str) -> bool:
         if cls._looks_like_service_query(query):
             return True
-        return cls._looks_like_knowledge_query(query) and not cls._looks_like_explicit_tour_query(query)
+        if cls._looks_like_explicit_tour_query(query):
+            return False
+        return cls._looks_like_knowledge_query(query) or cls._looks_like_travel_faq_candidate(query)
+
+    @classmethod
+    def _should_route_to_faq(cls, query: str) -> bool:
+        return cls._looks_like_faq_candidate(query)
 
     @classmethod
     def _faq_query_tags(cls, query: str) -> set[str]:
@@ -450,6 +542,14 @@ class TourRetrievalPipeline:
             tag
             for tag, patterns in cls.FAQ_QUERY_TAG_PATTERNS.items()
             if cls._contains_any_pattern(query_slug, patterns)
+        }
+
+    @classmethod
+    def _faq_query_terms(cls, text: str) -> set[str]:
+        return {
+            term
+            for term in re.findall(r"[a-z0-9]+", cls._query_slug(text))
+            if len(term) >= 3 and term not in cls.FAQ_TERM_STOPWORDS
         }
 
     @classmethod
@@ -476,7 +576,8 @@ class TourRetrievalPipeline:
 
         location_terms = self._faq_location_terms(query)
         query_tags = self._faq_query_tags(query)
-        if not location_terms and not query_tags:
+        query_terms = self._faq_query_terms(query)
+        if not location_terms and not query_tags and not query_terms:
             return []
 
         candidates = []
@@ -489,18 +590,24 @@ class TourRetrievalPipeline:
             location_matches = self._metadata_text_matches_terms(searchable_text, location_terms)
             normalized_tags = {str(tag).strip().lower() for tag in tags}
             tag_matches = query_tags.intersection(normalized_tags)
+            term_matches = query_terms.intersection(self._faq_query_terms(searchable_text))
 
             score = 0.0
             if location_terms and location_matches:
                 score += 3.0
             if tag_matches:
                 score += 2.0 * len(tag_matches)
+            if term_matches:
+                score += min(3.0, 0.5 * len(term_matches))
 
             # Require at least one match dimension
             if score == 0:
                 continue
             # When both signals are available, require both to match
             if location_terms and query_tags and not (location_matches and tag_matches):
+                continue
+            # Avoid returning the first broad service result solely because it shares a tag
+            if not location_terms and query_tags and not term_matches:
                 continue
 
             candidates.append(
@@ -576,8 +683,9 @@ class TourRetrievalPipeline:
         )
         is_knowledge = self._looks_like_knowledge_query(query)
         is_service = self._looks_like_service_query(query)
+        is_faq_candidate = self._looks_like_faq_candidate(query)
         fallback_message = (
-            retrieval_unavailable_message if (is_knowledge or is_service) else out_of_scope_message
+            retrieval_unavailable_message if is_faq_candidate else out_of_scope_message
         )
 
         # If the query is location-dependent knowledge (NOT service) but no location
@@ -594,7 +702,7 @@ class TourRetrievalPipeline:
             return fallback_message, []
 
         # Non-knowledge, non-service queries should not fall through to FAISS
-        if not is_knowledge and not is_service:
+        if not is_faq_candidate:
             return fallback_message, []
 
         try:

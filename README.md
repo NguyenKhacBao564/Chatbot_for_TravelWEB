@@ -35,7 +35,7 @@ Các lớp chính:
 
 Tour search là business flow. Backend sẽ chạy search khi đã có `location` và ít nhất một trong hai điều kiện `time` hoặc `price`. Nếu chỉ mới có điểm đến, backend sẽ hỏi thêm ít nhất một ràng buộc nữa. LLM không quyết định tour nào hợp lệ.
 
-FAQ retrieval là knowledge flow. Khi intent là `out_of_scope` hoặc câu hỏi phù hợp FAQ, backend dùng FAISS để lấy câu trả lời từ `faq_metadata.json`. Gemini chỉ được dùng để diễn đạt lại ngắn gọn, không phải nguồn sự thật.
+FAQ retrieval là knowledge flow. Khi intent là `out_of_scope` hoặc câu hỏi phù hợp FAQ, backend dùng metadata/FAISS để lấy câu trả lời từ `faq_metadata.json`. Routing FAQ hiện dùng rule deterministic để ưu tiên các câu hỏi kiến thức/chính sách như ẩm thực, thời tiết, thú cưng, wifi, trẻ em/độ tuổi, không ghi các câu này vào session tìm tour. Gemini chỉ được dùng để diễn đạt lại ngắn gọn, không phải nguồn sự thật.
 
 ## Response API
 
@@ -238,14 +238,15 @@ Test hiện bao phủ:
 
 - API smoke test cho `/health` và `/chat`.
 - Parser thời gian.
-- Parser giá.
+- Parser giá, bao gồm guard chống nhận nhầm số tuổi/số người/số ngày thành ngân sách.
 - Tour search deterministic.
 - Partial search với `location + time`, `location + price`, và no-results.
-- Session tách theo `user_id` và tích lũy field qua nhiều turn.
+- FAQ routing/session guard cho các câu như `Hà Nội có quán cà phê...`, `Tour có wifi...`, `Trẻ em dưới 5 tuổi...`.
+- Session tách theo `user_id` và tích lũy field qua nhiều turn tìm tour.
 
 ## Ghi Chú Triển Khai
 
 - Gemini chỉ dùng để diễn đạt message/fallback, không dùng để chọn tour.
 - Business filtering nằm trong `TourSearchService`.
 - Session hiện vẫn in-memory, phù hợp local/demo. Production nên thay bằng Redis hoặc database.
-- FAQ retrieval dùng embedding hiện tại `all-MiniLM-L6-v2`; nên đánh giá lại với embedding tiếng Việt hoặc multilingual tốt hơn khi có evaluation set.
+- FAQ retrieval dùng metadata keyword scoring trước, sau đó mới fallback sang FAISS. Cần tiếp tục đánh giá chất lượng ranking với tập câu hỏi thật.

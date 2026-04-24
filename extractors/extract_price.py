@@ -1,6 +1,12 @@
 import re
 
 
+MONEY_UNIT_PATTERN = r"(?:triệu|nghìn|ngàn|tỷ|tỉ|tr|k|m)"
+CURRENCY_SUFFIX_PATTERN = r"(?:vnđ|vnd|đồng|đ)"
+AMOUNT_PATTERN = r"(?:\d{1,3}(?:[\.,\s]\d{3})+|\d+(?:[\.,]\d+)?)"
+PRICE_CONTEXT_PATTERN = r"(?:giá|khoảng|tầm|chỉ từ|dưới|trên|ngân sách|budget|còn)"
+
+
 def parse_number(text):
     """Chuyển văn bản thành số, hỗ trợ số thập phân (VD: '1.5' hoặc '2,5')."""
     text = text.strip().replace(" ", "")
@@ -38,9 +44,9 @@ def normalize_price_text(price_text):
 
     numeric_value = parse_number(numeric_match.group(1)) + extra_value
 
-    unit_match = re.search(r"(triệu|nghìn|ngàn|tỷ|tỉ|tr|k|m)\b", price_text)
+    unit_match = re.search(rf"{MONEY_UNIT_PATTERN}\b", price_text)
     if unit_match:
-        unit = unit_match.group(1)
+        unit = unit_match.group(0)
         multiplier = units.get(unit)
         if multiplier:
             return str(int(numeric_value * multiplier))
@@ -54,9 +60,9 @@ def extract_price_values(query):
         return []
 
     patterns = [
-        r"(\d{1,3}(?:[\.,\s]\d{3})+|\d+)\s*(?:vnđ|vnd|đồng|đ)",
-        r"(\d+(?:[\.,]\d+)?\s*(?:triệu|nghìn|ngàn|tỷ|tỉ|tr|k|m)\s*(?:rưỡi|nửa)?)",
-        r"(?:giá|khoảng|tầm|chỉ từ|dưới|trên|ngân sách|budget|còn)\s*(\d+(?:[\.,]\d+)?\s*(?:triệu|nghìn|ngàn|tỷ|tỉ|tr|k|m)?\s*(?:rưỡi|nửa)?)",
+        rf"({AMOUNT_PATTERN})\s*{CURRENCY_SUFFIX_PATTERN}",
+        rf"(\d+(?:[\.,]\d+)?\s*{MONEY_UNIT_PATTERN}\s*(?:rưỡi|nửa)?)",
+        rf"{PRICE_CONTEXT_PATTERN}\s*(\d{{5,}})",
         r"(?<!\d)(\d{5,})(?!\d)",
     ]
 

@@ -1,6 +1,6 @@
 # Worklog
 
-Last updated: 2026-04-24
+Last updated: 2026-04-25
 
 ## Quick Scan
 
@@ -157,6 +157,44 @@ Last updated: 2026-04-24
   - TravelWeb repo was not available in this workspace, so Express/UI contract remains unverified
 - Next exact step:
   - verify TravelWeb backend/frontend status handling if the repo is added; otherwise continue repository readiness and richer fixture work
+
+## 2026-04-25 - Batch 4 FAQ routing hardening and price false-positive fix
+
+- Session goal:
+  - fix verified UI failures where valid FAQ questions returned generic out-of-scope text or polluted tour-search state
+- Main changes:
+  - broadened deterministic FAQ candidate routing for recommendation/service/policy questions
+  - added FAQ metadata lexical overlap scoring so broad service tags do not always return the first tag match
+  - prevented short non-money quantities from being parsed as budgets
+  - kept explicit tour-search queries in search mode
+- Files changed:
+  - `pipelines/tour_pipeline.py`
+  - `extractors/extract_price.py`
+  - `tests/test_pipeline_sessions.py`
+  - `tests/test_extract_price.py`
+  - `README.md`
+  - `docs/ai_context/PROJECT_STATE.md`
+  - `docs/ai_context/EXECUTION_PLAN.md`
+  - `docs/ai_context/WORKLOG.md`
+- Tests added/updated:
+  - cafe recommendation FAQ routing
+  - pet policy FAQ routing with `tour` word present
+  - wifi service FAQ fallback
+  - child-ticket/age question does not parse `5` as budget
+  - price parser accepts real money phrases and rejects age/person/day counts
+- Verification:
+  - `python -m pytest tests/test_extract_price.py tests/test_pipeline_sessions.py -q` -> 34 passed
+  - `python -m pytest -q` -> 45 passed
+  - Playwright UI on `http://localhost:3000`:
+    - cafe query returned a concrete Hanoi cafe FAQ answer
+    - child-ticket query returned age policy FAQ answer, not missing budget guidance
+    - full Dalat search stayed in search path and returned TravelWeb `no_results` because MSSQL had no matching tour
+- Blockers / caveats:
+  - FAQ routing is still rule-based and should be evaluated with real query logs
+  - TravelWeb DB contents can differ from Python sample tour data
+  - `/health` still only returns a shallow status
+- Next exact step:
+  - implement component health/readiness reporting for `/health`
 
 ## Read This Next
 

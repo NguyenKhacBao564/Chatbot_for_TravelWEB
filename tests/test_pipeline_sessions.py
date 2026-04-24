@@ -204,6 +204,93 @@ def test_faq_metadata_keyword_search_prefers_matching_location_and_tag(monkeypat
     assert pipeline.retrievalPipeline.calls == []
 
 
+def test_cafe_recommendation_question_routes_to_faq_and_uses_metadata(monkeypatch):
+    pipeline = build_pipeline_with_faq_metadata(
+        [
+            {
+                "question": "Tuyên Quang có quán cà phê nào nổi tiếng?",
+                "answer": "Tuyên Quang có một số quán cà phê trung tâm.",
+                "tags": ["food"],
+            },
+            {
+                "question": "Hà Nội có những quán cà phê nổi tiếng nào nên ghé thăm?",
+                "answer": "Hà Nội có The Note Coffee, Cafe Giảng và nhiều quán cà phê phố cổ.",
+                "tags": ["food"],
+            },
+        ]
+    )
+    monkeypatch.setattr(tour_pipeline, "get_genai_response", lambda prompt, fallback=None: fallback)
+
+    response = pipeline.get_tour_response(
+        "Hà Nội có những quán cà phê nổi tiếng nào nên ghé thăm?",
+        user_id="user_hanoi_cafe",
+    )
+
+    assert response["status"] == "faq"
+    assert "Cafe Giảng" in response["message"]
+    assert response["faq_sources"][0]["source"] == "faq_metadata_keyword:1"
+    assert response["tours"] == []
+    assert pipeline.session_manager.get_session("user_hanoi_cafe")["search_history"] == []
+
+
+def test_pet_policy_with_tour_word_routes_to_faq_not_search(monkeypatch):
+    pipeline = build_pipeline_with_faq_metadata(
+        [
+            {
+                "question": "Tôi có thể mang theo thú cưng trong tour không?",
+                "answer": "Rất tiếc, hầu hết các tour không cho phép mang theo thú cưng.",
+                "tags": ["tour_customer_support"],
+            }
+        ]
+    )
+    monkeypatch.setattr(tour_pipeline, "get_genai_response", lambda prompt, fallback=None: fallback)
+
+    response = pipeline.get_tour_response(
+        "Tôi có thể mang theo thú cưng khi đi tour không?",
+        user_id="user_pet_policy",
+    )
+
+    assert response["status"] == "faq"
+    assert "thú cưng" in response["message"]
+    assert response["tours"] == []
+    assert pipeline.session_manager.get_session("user_pet_policy")["search_history"] == []
+
+
+def test_wifi_service_question_routes_to_contextual_faq_without_search():
+    pipeline = build_pipeline()
+
+    response = pipeline.get_tour_response("Tour có wifi trên xe không?", user_id="user_wifi")
+
+    assert response["status"] == "faq"
+    assert "chỉ hỗ trợ" not in response["message"]
+    assert response["tours"] == []
+    assert pipeline.session_manager.get_session("user_wifi")["search_history"] == []
+
+
+def test_child_ticket_question_does_not_parse_age_as_budget_or_pollute_session():
+    pipeline = build_pipeline()
+
+    first = pipeline.get_tour_response(
+        "Trẻ em dưới 5 tuổi có phải mua vé không?",
+        user_id="user_child_ticket",
+    )
+    second = pipeline.get_tour_response("3tr", user_id="user_child_ticket")
+
+    assert first["status"] == "faq"
+    assert "ngân sách" not in first["message"]
+    assert first["entities"]["price_max"] is None
+    assert first["tours"] == []
+
+    session = pipeline.session_manager.get_session("user_child_ticket")
+    assert session["location"] is None
+    assert session["time"] is None
+    assert session["price"] == "3000000"
+
+    assert second["status"] == "missing_info"
+    assert second["missing_fields"] == ["location"]
+    assert second["entities"]["price_max"] == 3000000
+
+
 def test_location_and_time_runs_partial_search():
     pipeline = build_pipeline()
 
