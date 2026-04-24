@@ -1,12 +1,13 @@
 # Execution Plan
 
-Last updated: 2026-04-23
+Last updated: 2026-04-24
 
 ## Quick Scan
 
 - Current sprint goal: improve product behavior without breaking the deterministic core.
 - Batch 1 cleanup/correctness is complete.
 - Batch 2 partial search is complete.
+- Batch 3 routing/session guard is complete.
 - Scope: next 1-2 implementation batches only.
 - Non-goal: no full rewrite, no real DB integration in this sprint, no LLM-driven search logic.
 
@@ -14,7 +15,8 @@ Last updated: 2026-04-23
 
 - Make the current runtime more useful before real DB integration lands.
 - Keep cleanup gains from batch 1 stable.
-- Keep partial search stable and improve repository realism without guessing unavailable external details.
+- Keep partial search stable.
+- Stop knowledge/FAQ-like queries from polluting tour-search session state.
 
 ## Batch 1 — Cleanup And Correctness
 
@@ -52,7 +54,51 @@ Last updated: 2026-04-23
   - no DB integration yet
   - no ranking redesign yet
 
-## Batch 3 — Repository Readiness And Richer Fixtures
+## Batch 3 — Knowledge Routing And Session Guard
+
+- Status: Completed
+- Purpose:
+  - prevent destination-based FAQ/knowledge questions from being treated as tour searches
+- Likely files touched:
+  - `pipelines/tour_pipeline.py`
+  - `tests/test_pipeline_sessions.py`
+  - project memory docs
+- Acceptance criteria:
+  - `Đà Lạt có món gì` routes to FAQ/fallback knowledge response
+  - FAQ-like destination queries do not write `location` into session
+  - later budget/time fragments do not inherit destination from a FAQ turn
+  - explicit tour queries with food words, such as `Có tour nào Đà Lạt ăn uống ngon không`, still enter search flow
+  - full `no_results` resets session
+- Result:
+  - deterministic keyword guard now runs before model/fallback intent
+  - missing-info messages no longer call Gemini
+  - full `no_results` resets session state
+- Risks:
+  - keyword guard can miss unseen knowledge wording
+  - hybrid queries still need product policy decisions over time
+- Non-goals:
+  - no FAQ embedding/model replacement
+  - no TravelWeb integration changes
+
+## Batch 4 — TravelWeb Contract Verification
+
+- Purpose:
+  - verify how the Express backend and React UI consume `ChatResponse`
+- Trigger:
+  - TravelWeb repo is available in the workspace
+- Likely files to inspect/touch:
+  - `backend/controller/chatController.js`
+  - `backend/routes/chatRoutes.js`
+  - frontend chatbot caller/component
+  - backend DB query layer
+- Acceptance criteria:
+  - `faq` and `missing_info` do not trigger tour DB queries
+  - `partial_search`, `success`, and `no_results` are rendered distinctly
+  - DB query/filter mapping from `entities` is explicit and tested
+- Non-goals:
+  - no guessed MSSQL integration without the actual repo
+
+## Batch 5 — Repository Readiness And Richer Fixtures
 
 - Purpose:
   - reduce the gap between current JSON adapter behavior and realistic search scenarios
@@ -75,7 +121,7 @@ Last updated: 2026-04-23
   - no guessed DB integration
   - no FAQ model change yet
 
-## Batch 4 — Real Repository Integration When Source Details Exist
+## Batch 6 — Real Repository Integration When Source Details Exist
 
 - Trigger:
   - concrete website DB or API access details are available
@@ -103,9 +149,10 @@ These matter, but they are not all actionable in the current repo state.
 
 ## Immediate Success Check
 
-After batch 3, the repo should be in this state:
+After batch 5, the repo should be in this state:
 
 - partial-search behavior remains stable
+- knowledge routing remains stable
 - repository contract is still clean
 - richer fixtures and tests make the next integration step safer
 

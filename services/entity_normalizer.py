@@ -9,24 +9,119 @@ from schemas.tour_models import ExtractedEntities, TourSearchFilters
 
 
 DESTINATION_ALIASES = {
-    "da-lat": "Đà Lạt",
-    "dalat": "Đà Lạt",
-    "ha-noi": "Hà Nội",
-    "hanoi": "Hà Nội",
-    "phu-quoc": "Phú Quốc",
-    "nha-trang": "Nha Trang",
-    "da-nang": "Đà Nẵng",
-    "danang": "Đà Nẵng",
-    "sapa": "Sa Pa",
-    "sa-pa": "Sa Pa",
-    "ha-long": "Hạ Long",
-    "hue": "Huế",
-    "hoi-an": "Hội An",
-    "ninh-binh": "Ninh Bình",
-    "ha-giang": "Hà Giang",
-    "quy-nhon": "Quy Nhơn",
-    "vung-tau": "Vũng Tàu",
+    # --- A ---
+    "an-giang": "An Giang",
+    # --- B ---
+    "ba-ria": "Vũng Tàu",
+    "ba-ria-vung-tau": "Vũng Tàu",
+    "bac-giang": "Bắc Giang",
+    "bac-kan": "Bắc Kạn",
+    "bac-lieu": "Bạc Liêu",
+    "bac-ninh": "Bắc Ninh",
+    "ben-tre": "Bến Tre",
+    "binh-dinh": "Quy Nhơn",
+    "binh-duong": "Bình Dương",
+    "binh-phuoc": "Bình Phước",
+    "binh-thuan": "Phan Thiết",
+    # --- C ---
+    "ca-mau": "Cà Mau",
     "can-tho": "Cần Thơ",
+    "cao-bang": "Cao Bằng",
+    "cat-ba": "Cát Bà",
+    "con-dao": "Côn Đảo",
+    # --- D ---
+    "da-lat": "Đà Lạt",
+    "da-nang": "Đà Nẵng",
+    "dak-lak": "Đắk Lắk",
+    "dak-nong": "Đắk Nông",
+    "dalat": "Đà Lạt",
+    "danang": "Đà Nẵng",
+    "dien-bien": "Điện Biên",
+    "dong-nai": "Đồng Nai",
+    "dong-thap": "Đồng Tháp",
+    # --- G ---
+    "gia-lai": "Gia Lai",
+    # --- H ---
+    "ha-giang": "Hà Giang",
+    "ha-long": "Hạ Long",
+    "ha-nam": "Hà Nam",
+    "ha-noi": "Hà Nội",
+    "ha-tinh": "Hà Tĩnh",
+    "hai-duong": "Hải Dương",
+    "hai-phong": "Hải Phòng",
+    "hanoi": "Hà Nội",
+    "hau-giang": "Hậu Giang",
+    "hcm": "TP HCM",
+    "ho-chi-minh": "TP HCM",
+    "hoa-binh": "Hòa Bình",
+    "hoi-an": "Hội An",
+    "hoian": "Hội An",
+    "hue": "Huế",
+    "hung-yen": "Hưng Yên",
+    # --- K ---
+    "khanh-hoa": "Nha Trang",
+    "kien-giang": "Phú Quốc",
+    "kon-tum": "Kon Tum",
+    # --- L ---
+    "lai-chau": "Lai Châu",
+    "lam-dong": "Đà Lạt",
+    "lang-son": "Lạng Sơn",
+    "lao-cai": "Sa Pa",
+    "long-an": "Long An",
+    "ly-son": "Lý Sơn",
+    # --- M ---
+    "mai-chau": "Mai Châu",
+    "moc-chau": "Mộc Châu",
+    "mui-ne": "Phan Thiết",
+    # --- N ---
+    "nam-dinh": "Nam Định",
+    "nghe-an": "Nghệ An",
+    "nha-trang": "Nha Trang",
+    "nhatrang": "Nha Trang",
+    "ninh-binh": "Ninh Bình",
+    "ninh-thuan": "Ninh Thuận",
+    # --- P ---
+    "phan-thiet": "Phan Thiết",
+    "phanthiet": "Phan Thiết",
+    "phong-nha": "Phong Nha",
+    "phu-quoc": "Phú Quốc",
+    "phu-tho": "Phú Thọ",
+    "phu-yen": "Phú Yên",
+    "phuquoc": "Phú Quốc",
+    # --- Q ---
+    "quang-binh": "Quảng Bình",
+    "quang-nam": "Hội An",
+    "quang-ngai": "Quảng Ngãi",
+    "quang-ninh": "Hạ Long",
+    "quang-tri": "Quảng Trị",
+    "quy-nhon": "Quy Nhơn",
+    "quynhon": "Quy Nhơn",
+    # --- S ---
+    "sa-pa": "Sa Pa",
+    "sai-gon": "TP HCM",
+    "saigon": "TP HCM",
+    "sapa": "Sa Pa",
+    "soc-trang": "Sóc Trăng",
+    "son-la": "Sơn La",
+    # --- T ---
+    "tam-dao": "Tam Đảo",
+    "tay-ninh": "Tây Ninh",
+    "thai-binh": "Thái Bình",
+    "thai-nguyen": "Thái Nguyên",
+    "thanh-hoa": "Thanh Hóa",
+    "thua-thien-hue": "Huế",
+    "tien-giang": "Tiền Giang",
+    "tp-hcm": "TP HCM",
+    "tphcm": "TP HCM",
+    "tra-vinh": "Trà Vinh",
+    "tuyen-quang": "Tuyên Quang",
+    # --- V ---
+    "vinh-long": "Vĩnh Long",
+    "vinh-phuc": "Vĩnh Phúc",
+    "vung-tau": "Vũng Tàu",
+    "vungtau": "Vũng Tàu",
+    # --- Y ---
+    "yen-bai": "Yên Bái",
 }
 
 
@@ -53,9 +148,15 @@ def normalize_destination(value: str | None) -> Tuple[Optional[str], Optional[st
 
 def extract_destination_from_text(query: str) -> Tuple[Optional[str], Optional[str]]:
     query_slug = slugify_vietnamese(query) or ""
+    # Split into slug segments for word-boundary matching to avoid false
+    # positives like "thue" matching alias "hue".
+    segments = query_slug.split("-")
     for alias, canonical in sorted(DESTINATION_ALIASES.items(), key=lambda item: len(item[0]), reverse=True):
-        if alias in query_slug:
-            return canonical, slugify_vietnamese(canonical)
+        alias_parts = alias.split("-")
+        alias_len = len(alias_parts)
+        for i in range(len(segments) - alias_len + 1):
+            if segments[i : i + alias_len] == alias_parts:
+                return canonical, slugify_vietnamese(canonical)
     return None, None
 
 

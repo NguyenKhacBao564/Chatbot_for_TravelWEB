@@ -199,7 +199,7 @@
     "query": "Tôi nên mặc gì khi đến Hà Nội vào mùa đông?",
     "intent": "out_of_scope"
   },
-  {
+  {  
     "query": "Thời tiết Hà Nội vào mùa hè như thế nào và tôi nên mặc trang phục gì?",
     "intent": "out_of_scope"
   },

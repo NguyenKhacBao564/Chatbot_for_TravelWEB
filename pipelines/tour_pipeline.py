@@ -17,11 +17,12 @@ from extractors.extract_price import extract_price_vn
 from extractors.extract_time import extract_all_times
 from google_genAI import get_genai_response
 from pipelines.retrieval import RetrievalPipeline
-from schemas.chat_response import ChatResponse
+from schemas.chat_response import ChatResponse, FAQSource
 from schemas.tour_models import ExtractedEntities
 from services.entity_normalizer import (
     extract_destination_from_text,
     normalize_entities,
+    slugify_vietnamese,
     to_search_filters,
 )
 from services.tour_search_service import TourSearchService
@@ -107,6 +108,211 @@ class TourRetrievalPipeline:
         "find_tour_with_time_and_price",
         "find_with_all",
     }
+    KNOWLEDGE_QUERY_PATTERNS = {
+        # food
+        "an-gi",
+        "mon-gi",
+        "mon-an",
+        "an-uong",
+        "am-thuc",
+        "dac-san",
+        # weather
+        "thoi-tiet",
+        "khi-hau",
+        "nang-khong",
+        "mua-khong",
+        "nhiet-do",
+        "nong-khong",
+        "lanh-khong",
+        "ret-khong",
+        # culture
+        "van-hoa",
+        "le-hoi",
+        "lich-su",
+        "phong-tuc",
+        "tap-quan",
+        "ngon-ngu",
+        "dan-toc",
+        # clothing
+        "mac-gi",
+        "mac-do",
+        "nen-mac",
+        "trang-phuc",
+        "quan-ao",
+        "chuan-bi-gi",
+        "mang-gi",
+        "do-gi",
+        "giay-dep",
+        "ao-khoac",
+        # activities / places
+        "mua-gi",
+        "choi-gi",
+        "gi-choi",
+        "di-dau",
+        "tham-quan-gi",
+        "gi-vui",
+        "gi-hay",
+        "gi-dep",
+        "o-dau",
+        "check-in",
+        "dia-diem",
+        # transport
+        "phuong-tien",
+        "di-chuyen",
+        "di-lai",
+        "cach-di",
+        "den-bang-gi",
+        "xe-khach",
+        "may-bay",
+        "tau-hoa",
+        "tau-thuyen",
+        "thue-xe",
+        # distance / logistics
+        "bao-nhieu-km",
+        "cach-bao-xa",
+        # safety
+        "an-ninh",
+        "an-toan",
+        # shopping / entertainment
+        "mua-sam",
+        "cho-dem",
+        "cho-nao",
+        # tour service / policy (NOT tour search)
+        "huy-tour",
+        "doi-lich",
+        "thay-doi-lich",
+        "hoan-tien",
+        "chinh-sach",
+        "bao-hiem",
+        "thanh-toan",
+        "tra-gop",
+        "dat-coc",
+        "thu-tuc",
+        "ho-tro",
+        "khieu-nai",
+        "dich-vu",
+        "phien-dich",
+        "huong-dan-vien",
+        "hanh-ly",
+        "khach-san",
+        "dat-phong",
+        "visa",
+        "ho-chieu",
+    }
+    # Patterns that signal a service/policy FAQ even when "tour" is present
+    SERVICE_QUERY_PATTERNS = {
+        "huy-tour",
+        "doi-lich",
+        "thay-doi-lich",
+        "thay-doi",
+        "hoan-tien",
+        "chinh-sach",
+        "bao-hiem",
+        "thanh-toan",
+        "tra-gop",
+        "dat-coc",
+        "thu-tuc",
+        "ho-tro",
+        "khieu-nai",
+        "dich-vu",
+        "phien-dich",
+        "huong-dan-vien",
+        "hanh-ly",
+        "khach-san",
+        "dat-phong",
+        "visa",
+        "ho-chieu",
+        "dua-don",
+        "san-bay",
+        "don-tien",
+        "bao-gom",
+        "bua-an",
+        "an-chay",
+    }
+    FAQ_QUERY_TAG_PATTERNS = {
+        "food": {"an-gi", "mon-gi", "mon-an", "an-uong", "am-thuc", "dac-san"},
+        "weather": {
+            "thoi-tiet",
+            "khi-hau",
+            "nang-khong",
+            "mua-khong",
+            "nhiet-do",
+            "nong-khong",
+            "lanh-khong",
+            "ret-khong",
+        },
+        "clothing": {
+            "mac-gi",
+            "mac-do",
+            "nen-mac",
+            "trang-phuc",
+            "quan-ao",
+            "chuan-bi-gi",
+            "mang-gi",
+            "do-gi",
+            "giay-dep",
+            "ao-khoac",
+        },
+        "culture": {"van-hoa", "le-hoi", "lich-su", "phong-tuc", "tap-quan", "dan-toc"},
+        "transport": {
+            "phuong-tien",
+            "di-chuyen",
+            "di-lai",
+            "cach-di",
+            "den-bang-gi",
+            "xe-khach",
+            "may-bay",
+            "tau-hoa",
+            "tau-thuyen",
+            "thue-xe",
+        },
+        "entertainment": {"choi-gi", "gi-choi", "gi-vui", "gi-hay", "tham-quan-gi", "check-in", "dia-diem"},
+        "shopping": {"mua-gi", "mua-sam", "cho-dem", "cho-nao"},
+        "famous destination": {"o-dau", "di-dau"},
+        "service": {
+            "ho-tro", "dich-vu", "phien-dich", "huong-dan-vien",
+            "hanh-ly", "khach-san", "dat-phong", "dua-don", "san-bay",
+            "don-tien", "bao-gom", "bua-an", "an-chay",
+        },
+        "tour_schedule_changes": {"doi-lich", "thay-doi-lich", "thay-doi", "rut-ngan"},
+        "tour_cancellation_refund": {"huy-tour", "hoan-tien", "chinh-sach"},
+        "tour_booking_conditions": {"dat-coc", "thu-tuc", "dieu-kien"},
+        "tour_customer_support": {"khieu-nai", "ho-tro"},
+        "payment": {"thanh-toan", "tra-gop", "dat-coc"},
+        "visa": {"visa", "ho-chieu"},
+    }
+    FAQ_LOCATION_RELATED_TERMS = {
+        "Đà Lạt": ("Lâm Đồng",),
+        "Phú Quốc": ("Kiên Giang",),
+        "Nha Trang": ("Khánh Hòa",),
+        "Sa Pa": ("Lào Cai",),
+        "Hạ Long": ("Quảng Ninh",),
+        "Huế": ("Thừa Thiên Huế",),
+        "Hội An": ("Quảng Nam",),
+        "Quy Nhơn": ("Bình Định",),
+        "Vũng Tàu": ("Bà Rịa Vũng Tàu", "Bà Rịa"),
+        "Phan Thiết": ("Bình Thuận", "Mũi Né"),
+        "TP HCM": ("Sài Gòn", "Hồ Chí Minh"),
+        "Phong Nha": ("Quảng Bình",),
+        "Côn Đảo": ("Bà Rịa Vũng Tàu",),
+        "Cát Bà": ("Hải Phòng",),
+        "Tam Đảo": ("Vĩnh Phúc",),
+        "Mộc Châu": ("Sơn La",),
+        "Mai Châu": ("Hòa Bình",),
+        "Lý Sơn": ("Quảng Ngãi",),
+    }
+    EXPLICIT_TOUR_QUERY_PATTERNS = {
+        "tour",
+        "dat-tour",
+        "tim-tour",
+        "co-tour",
+        "tu-van-tour",
+        "lich-trinh",
+        "khoi-hanh",
+        "lich-khoi-hanh",
+        "gia-tour",
+        "book-tour",
+    }
 
     def __init__(
         self,
@@ -143,6 +349,9 @@ class TourRetrievalPipeline:
             logger.warning("Intent model unavailable, using rule-based fallback: %s", exc)
 
     def extract_intent(self, query):
+        if self._should_route_to_faq(query):
+            return "out_of_scope"
+
         if self.intent_tokenizer is None or self.intent_model is None:
             return self._extract_intent_fallback(query)
 
@@ -157,7 +366,10 @@ class TourRetrievalPipeline:
             with torch.no_grad():
                 outputs = self.intent_model(**inputs)
             predicted_class = torch.argmax(outputs.logits, dim=1).item()
-            return self.INTENT_LABELS.get(predicted_class, "out_of_scope")
+            intent = self.INTENT_LABELS.get(predicted_class, "out_of_scope")
+            if intent == "out_of_scope" and self._looks_like_explicit_tour_query(query):
+                return self._extract_intent_fallback(query)
+            return intent
         except Exception as exc:
             logger.error("Intent classification failed: %s", exc)
             return self._extract_intent_fallback(query)
@@ -167,11 +379,22 @@ class TourRetrievalPipeline:
         has_location = bool(extract_destination_from_text(query)[1])
         has_time = extract_all_times(query) is not None
         has_price = extract_price_vn(query) is not None
-        looks_like_tour_query = any(
+
+        # Explicit tour keywords are the ONLY signal that should enter search.
+        # A bare destination (e.g. "Hà Nội có phim gì") is NOT enough.
+        has_tour_keyword = any(
             keyword in query_lower
-            for keyword in ["tour", "du lịch", "đi ", "khởi hành", "giá", "ngân sách"]
+            for keyword in [
+                "tour", "du lịch", "đi chơi", "đi du",
+                "muốn đi", "muốn tìm", "muốn book",
+                "khởi hành", "ngân sách", "đặt tour", "book tour",
+            ]
         )
-        if not looks_like_tour_query and not (has_location or has_time or has_price):
+        # Price/time fragments without location are continuation of a prior
+        # search turn, so they count as tour intent.
+        has_search_fragment = (has_time or has_price) and not has_location
+
+        if not has_tour_keyword and not has_search_fragment:
             return "out_of_scope"
 
         if has_location and has_time and has_price:
@@ -189,6 +412,113 @@ class TourRetrievalPipeline:
         if has_price:
             return "find_tour_with_price"
         return "out_of_scope"
+
+    @classmethod
+    def _query_slug(cls, query: str) -> str:
+        return slugify_vietnamese(query) or ""
+
+    @classmethod
+    def _contains_any_pattern(cls, query_slug: str, patterns: set[str]) -> bool:
+        return any(pattern in query_slug for pattern in patterns)
+
+    @classmethod
+    def _looks_like_knowledge_query(cls, query: str) -> bool:
+        return cls._contains_any_pattern(cls._query_slug(query), cls.KNOWLEDGE_QUERY_PATTERNS)
+
+    @classmethod
+    def _looks_like_service_query(cls, query: str) -> bool:
+        return cls._contains_any_pattern(cls._query_slug(query), cls.SERVICE_QUERY_PATTERNS)
+
+    @classmethod
+    def _looks_like_explicit_tour_query(cls, query: str) -> bool:
+        query_slug = cls._query_slug(query) or ""
+        # "tour-guide" is the company brand name, not a tour search intent
+        cleaned = query_slug.replace("tour-guide", "")
+        return cls._contains_any_pattern(cleaned, cls.EXPLICIT_TOUR_QUERY_PATTERNS)
+
+    @classmethod
+    def _should_route_to_faq(cls, query: str) -> bool:
+        # Service/policy queries ALWAYS go to FAQ, even if "tour" is present
+        if cls._looks_like_service_query(query):
+            return True
+        return cls._looks_like_knowledge_query(query) and not cls._looks_like_explicit_tour_query(query)
+
+    @classmethod
+    def _faq_query_tags(cls, query: str) -> set[str]:
+        query_slug = cls._query_slug(query)
+        return {
+            tag
+            for tag, patterns in cls.FAQ_QUERY_TAG_PATTERNS.items()
+            if cls._contains_any_pattern(query_slug, patterns)
+        }
+
+    @classmethod
+    def _faq_location_terms(cls, query: str) -> list[str]:
+        location, _ = extract_destination_from_text(query)
+        if not location:
+            return []
+
+        terms = [location, *cls.FAQ_LOCATION_RELATED_TERMS.get(location, ())]
+        return list(dict.fromkeys(terms))
+
+    @classmethod
+    def _metadata_text_matches_terms(cls, text: str, terms: list[str]) -> bool:
+        text_slug = cls._query_slug(text)
+        return any(
+            bool(term_slug) and term_slug in text_slug
+            for term_slug in (cls._query_slug(term) for term in terms)
+        )
+
+    def _retrieve_faq_from_metadata(self, query: str, limit: int) -> list[FAQSource]:
+        metadata = getattr(self.retrievalPipeline, "metadata", None)
+        if not metadata:
+            return []
+
+        location_terms = self._faq_location_terms(query)
+        query_tags = self._faq_query_tags(query)
+        if not location_terms and not query_tags:
+            return []
+
+        candidates = []
+        for idx, item in enumerate(metadata):
+            question = item.get("question") or ""
+            answer = item.get("answer") or ""
+            tags = item.get("tags") or []
+            searchable_text = f"{question} {answer} {' '.join(tags)}"
+
+            location_matches = self._metadata_text_matches_terms(searchable_text, location_terms)
+            normalized_tags = {str(tag).strip().lower() for tag in tags}
+            tag_matches = query_tags.intersection(normalized_tags)
+
+            score = 0.0
+            if location_terms and location_matches:
+                score += 3.0
+            if tag_matches:
+                score += 2.0 * len(tag_matches)
+
+            # Require at least one match dimension
+            if score == 0:
+                continue
+            # When both signals are available, require both to match
+            if location_terms and query_tags and not (location_matches and tag_matches):
+                continue
+
+            candidates.append(
+                (
+                    score,
+                    idx,
+                    FAQSource(
+                        question=question,
+                        answer=answer,
+                        tags=tags,
+                        score=round(score / 5.0, 4),
+                        source=f"faq_metadata_keyword:{idx}",
+                    ),
+                )
+            )
+
+        candidates.sort(key=lambda item: (-item[0], item[1]))
+        return [source for _, _, source in candidates[:limit]]
 
     def extract_entities(self, query, intent, user_id="default_user"):
         session = self.session_manager.get_session(user_id)
@@ -236,15 +566,41 @@ class TourRetrievalPipeline:
         self.session_manager.reset_session(user_id)
 
     def get_faq_response(self, query, k=3):
-        fallback_message = (
+        out_of_scope_message = (
             "Dạ, em chỉ hỗ trợ các câu hỏi liên quan đến du lịch hoặc tư vấn tour phù hợp. "
             "Mong bạn thông cảm."
         )
+        retrieval_unavailable_message = (
+            "Dạ, em chưa có thông tin chi tiết để trả lời câu hỏi này. "
+            "Quý khách có thể hỏi về tour du lịch hoặc thử lại sau nhé."
+        )
+        is_knowledge = self._looks_like_knowledge_query(query)
+        is_service = self._looks_like_service_query(query)
+        fallback_message = (
+            retrieval_unavailable_message if (is_knowledge or is_service) else out_of_scope_message
+        )
+
+        # If the query is location-dependent knowledge (NOT service) but no location
+        # found, ask for clarification instead of returning irrelevant results
+        location_terms = self._faq_location_terms(query)
+        query_tags = self._faq_query_tags(query)
+        if is_knowledge and not is_service and not location_terms and query_tags:
+            return (
+                "Dạ, quý khách muốn hỏi về địa điểm nào ạ? "
+                "Ví dụ: Đà Lạt, Đà Nẵng, Nha Trang, Phú Quốc..."
+            ), []
+
         if self.retrievalPipeline is None:
             return fallback_message, []
 
+        # Non-knowledge, non-service queries should not fall through to FAISS
+        if not is_knowledge and not is_service:
+            return fallback_message, []
+
         try:
-            sources = self.retrievalPipeline.retrieve(query, top_k=k)
+            sources = self._retrieve_faq_from_metadata(query, limit=k)
+            if not sources:
+                sources = self.retrievalPipeline.retrieve(query, top_k=k)
             if not sources:
                 return fallback_message, []
 
@@ -304,7 +660,7 @@ class TourRetrievalPipeline:
             missing_fields=missing_fields,
         )
 
-        if status == "success":
+        if status in {"success", "no_results"}:
             self.reset_session(user_id)
 
         response = ChatResponse(
@@ -373,22 +729,13 @@ class TourRetrievalPipeline:
                 fallback = (
                     "Dạ, để em bắt đầu tìm tour phù hợp, quý khách cho em xin điểm đến mong muốn nhé."
                 )
-            prompt = (
-                "Viết một câu tiếng Việt lịch sự để xin thêm điểm đến cho việc tìm tour. "
-                f"Thông tin đã có: {model_to_dict(entities)}."
-            )
-            return get_genai_response(prompt, fallback=fallback) or fallback
+            return fallback
 
         fallback = (
             f"Dạ, em đã ghi nhận điểm đến {entities.location}. "
             "Quý khách cho em xin thêm thời gian khởi hành hoặc ngân sách dự kiến để em bắt đầu tìm tour phù hợp."
         )
-        prompt = (
-            "Viết một câu tiếng Việt lịch sự để xin thêm ít nhất một điều kiện tìm tour. "
-            "Yêu cầu khách bổ sung thời gian khởi hành hoặc ngân sách dự kiến. "
-            f"Thông tin đã có: {model_to_dict(entities)}."
-        )
-        return get_genai_response(prompt, fallback=fallback) or fallback
+        return fallback
 
     def _tour_search_message(
         self,

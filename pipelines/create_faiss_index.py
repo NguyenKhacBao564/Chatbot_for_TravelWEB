@@ -21,7 +21,7 @@ def create_faiss_index(input_file='data/processed/faq_cleaned.json', index_file=
         raise ValueError("No questions found in FAQ data")
     
     # Initialize the SentenceTransformer model
-    model = SentenceTransformer("all-MiniLM-L6-v2")
+    model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
     # Convert questions to embeddings
     embeddings = model.encode(questions, show_progress_bar=True)
 

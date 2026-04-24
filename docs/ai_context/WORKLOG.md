@@ -1,6 +1,6 @@
 # Worklog
 
-Last updated: 2026-04-23
+Last updated: 2026-04-24
 
 ## Quick Scan
 
@@ -127,6 +127,36 @@ Last updated: 2026-04-23
   - partial-search responses use the same `tours` field for both non-empty and empty results, so callers must inspect both `status` and `tours`
 - Next exact step:
   - improve repository readiness and richer fixtures without guessing external DB/API details
+
+## 2026-04-24 - Batch 3 knowledge routing and session guard
+
+- Session goal:
+  - stop FAQ-like destination queries from entering the tour-search session flow
+  - reduce messaging instability on missing-info turns
+- Main changes:
+  - added deterministic knowledge-query guard before PhoBERT/fallback search routing
+  - kept explicit tour queries with food/knowledge words in the tour-search path
+  - prevented queries like `Đà Lạt có món gì` from writing `location` into session
+  - reset session after full `no_results`, not only after `success`
+  - made `missing_info` messages deterministic and removed Gemini calls from that path
+- Files changed:
+  - `pipelines/tour_pipeline.py`
+  - `tests/test_pipeline_sessions.py`
+  - `docs/ai_context/EXECUTION_PLAN.md`
+  - `docs/ai_context/PROJECT_STATE.md`
+  - `docs/ai_context/DECISIONS.md`
+  - `docs/ai_context/WORKLOG.md`
+- Tests added/updated:
+  - destination food question routes to FAQ without polluting session
+  - FAQ turn followed by budget fragment does not inherit destination
+  - explicit tour query with food words still enters search flow
+  - full `no_results` resets session
+  - missing-info message path does not call Gemini
+- Blockers / caveats:
+  - knowledge guard is keyword-based and should be expanded with real logs
+  - TravelWeb repo was not available in this workspace, so Express/UI contract remains unverified
+- Next exact step:
+  - verify TravelWeb backend/frontend status handling if the repo is added; otherwise continue repository readiness and richer fixture work
 
 ## Read This Next
 

@@ -21,7 +21,7 @@ class RetrievalPipeline:
         self,
         index_file="faq_index.faiss",
         metadata_file="faq_metadata.json",
-        distance_threshold=1.0,
+        distance_threshold=12.0,
     ):
         if faiss is None or np is None or SentenceTransformer is None:
             raise RuntimeError("faiss-cpu, numpy and sentence-transformers are required for FAQ retrieval")
@@ -30,7 +30,7 @@ class RetrievalPipeline:
             self.metadata = json.load(f)
 
         self.index = faiss.read_index(index_file)
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 
     def retrieve(self, user_query, top_k=3):
         """Return FAQ matches with metadata for response/debugging."""

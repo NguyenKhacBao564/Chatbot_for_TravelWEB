@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-04-23
+Last updated: 2026-04-24
 
 ## Quick Scan
 
@@ -8,6 +8,7 @@ Last updated: 2026-04-23
 - Business truth must not come from LLM.
 - Repository boundary stays even before real DB integration exists.
 - Graceful degradation is accepted for local dev/test.
+- Knowledge/FAQ-like queries are guarded before tour-search session mutation.
 - Some decisions are explicitly temporary and should not be treated as final architecture.
 
 ## D-001 Hybrid NLP + Deterministic Search
@@ -104,17 +105,41 @@ Last updated: 2026-04-23
   - easier frontend integration in development
   - production origin policy still needs separate hardening
 
-## D-010 Keep Session After Partial Search, Reset After Full Success
+## D-010 Keep Session After Missing/Partial Search, Reset After Terminal Full Search
 
-- Status: Accepted and executed in batch 2
+- Status: Accepted and updated in batch 3
 - Context: Users often provide destination first, then add time or budget in later turns.
 - Choice:
   - keep session state after `missing_info` and `partial_search`
-  - reset session only after full `success`
+  - reset session after full `success`
+  - also reset session after full `no_results`
 - Consequences:
   - multi-turn narrowing works correctly
+  - failed full searches do not trap later turns in stale filters
   - in-memory session state remains more important to runtime behavior
   - session bugs would have more visible user impact
+
+## D-011 Guard Knowledge Queries Before Tour Search
+
+- Status: Accepted and executed in batch 3
+- Context: Queries like `Đà Lạt có món gì` contain a valid destination but are knowledge/FAQ requests, not tour-search requests.
+- Choice:
+  - detect common knowledge patterns such as food, weather, culture, festivals, and activities before entity extraction mutates session state
+  - route these queries to FAQ/fallback response unless the query has explicit tour intent such as `tour`, `đặt tour`, `có tour`, `khởi hành`, or `lịch trình`
+- Consequences:
+  - prevents FAQ-like turns from polluting search session state
+  - keeps deterministic behavior testable
+  - keyword coverage must be expanded as real query logs expose misses
+
+## D-012 Missing-Info Messages Are Deterministic
+
+- Status: Accepted and executed in batch 3
+- Context: Missing-info prompts do not need LLM phrasing and were adding latency plus output variability.
+- Choice: Return deterministic fallback strings for `missing_info`.
+- Consequences:
+  - lower latency for common clarification turns
+  - less chance that a clarification prompt sounds like a failed search
+  - Gemini is still available for FAQ rephrasing and search intro phrasing
 
 ## Open Decisions
 
@@ -122,7 +147,7 @@ Last updated: 2026-04-23
   - SQL repository
   - backend API repository
   - another source
-- Whether Gemini should remain enabled for missing-info/search-intro phrasing, or be reduced further in favor of deterministic strings
+- Whether Gemini should remain enabled for search-intro phrasing, or be reduced further in favor of deterministic strings
 - FAQ retrieval upgrade:
   - keep current embedding stack
   - move to better multilingual/Vietnamese model
