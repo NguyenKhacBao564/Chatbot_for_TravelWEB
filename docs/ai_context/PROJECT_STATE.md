@@ -12,6 +12,7 @@ Last updated: 2026-04-26
 - TravelWeb UI search now uses MSSQL seeded demo data for Đà Lạt, Phú Yên, Huế.
 - Search now runs with `location + time`, `location + price`, or all three filters.
 - FAQ-like knowledge/service queries are guarded before search/session mutation.
+- Lightweight `conversation_context` now keeps recent FAQ/search context without polluting search slots.
 - FAQ retrieval is separate from tour search and uses metadata keyword scoring before FAISS fallback.
 
 ## What Is Working Now
@@ -38,6 +39,11 @@ Last updated: 2026-04-26
   - examples like `Đà Lạt có món gì` route to FAQ/fallback response
   - examples like `Hà Nội có những quán cà phê...`, `Tour có wifi...`, `Trẻ em dưới 5 tuổi...` do not enter tour search
   - explicit tour queries with food words still enter tour-search flow
+- Context-aware multi-turn behavior:
+  - FAQ turns can remember `last_location` and `last_topic`
+  - explicit search follow-ups can reuse the recent FAQ location
+  - FAQ follow-ups with time/season language stay in FAQ mode
+  - bare location replies can complete an active missing-location search
 - Price extraction no longer treats short non-money quantities like ages, people counts, or day counts as budgets.
 - Price extraction no longer treats the year before `trên` as a money unit, e.g. `năm 2026 trên 5tr`.
 - Full `no_results` now resets session state.
@@ -76,6 +82,7 @@ Last updated: 2026-04-26
   - in-memory
   - per-process
   - unsynchronized
+- `conversation_context` is also in-memory and should be treated as local-runtime memory, not durable user profile data.
 - Search still depends on `location` as the only hard requirement and will not run on destination-only queries.
 - `extract_location()` still returns only the first detected location.
 - Destination normalization is still based on a small hardcoded alias map.
@@ -93,6 +100,7 @@ Last updated: 2026-04-26
 - Practical next batch:
   - improve `/health` into component health/readiness reporting
   - keep TravelWeb/Python response contract tests current
+  - verify whether TravelWeb clear-chat should call Python `/reset`
   - add evaluation coverage for search and retrieval quality
   - decide whether Python standalone should keep JSON-only mode or gain a real DB repository adapter
 
@@ -106,4 +114,3 @@ Last updated: 2026-04-26
 
 - Root `README.md`
 - `REFACTOR_NOTES.md`
-- `ampfeedback.md`

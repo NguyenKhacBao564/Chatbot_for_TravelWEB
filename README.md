@@ -37,6 +37,15 @@ Tour search là business flow. Backend sẽ chạy search khi đã có `location
 
 FAQ retrieval là knowledge flow. Khi intent là `out_of_scope` hoặc câu hỏi phù hợp FAQ, backend dùng metadata/FAISS để lấy câu trả lời từ `faq_metadata.json`. Routing FAQ hiện dùng rule deterministic để ưu tiên các câu hỏi kiến thức/chính sách như ẩm thực, thời tiết, thú cưng, wifi, trẻ em/độ tuổi, không ghi các câu này vào session tìm tour. Gemini chỉ được dùng để diễn đạt lại ngắn gọn, không phải nguồn sự thật.
 
+Pipeline hiện tách `search session` và `conversation_context`:
+
+- `search session` giữ slot nghiệp vụ `location`, `time`, `price` cho luồng tìm tour.
+- `conversation_context` giữ ngữ cảnh nhẹ như địa điểm/chủ đề gần nhất để hiểu follow-up.
+- FAQ turn có thể lưu `last_location` trong `conversation_context`, nhưng không ghi vào search slots.
+- Search follow-up rõ ràng như `Có tour nào vào tháng 12 không` có thể kế thừa địa điểm FAQ gần nhất.
+- Follow-up kiến thức như `nhưng tháng 5 là mùa hè mà` vẫn ở FAQ mode, không bị ép sang tour search.
+- `/reset` xóa cả search session và conversation context.
+
 ## Response API
 
 `POST /chat` trả response có cấu trúc ổn định:

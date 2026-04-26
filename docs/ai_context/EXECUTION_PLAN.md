@@ -10,6 +10,7 @@ Last updated: 2026-04-26
 - Batch 3 routing/session guard is complete.
 - Batch 4 FAQ routing hardening and price false-positive fix is complete.
 - Batch 5 TravelWeb demo data and contract fixes are complete.
+- Batch 6 conversation context memory is complete.
 - Scope: next 1-2 implementation batches only.
 - Non-goal: no full rewrite, no LLM-driven search logic.
 
@@ -19,6 +20,7 @@ Last updated: 2026-04-26
 - Keep cleanup gains from batch 1 stable.
 - Keep partial search stable.
 - Stop knowledge/FAQ-like queries and non-money quantities from polluting tour-search session state.
+- Support useful follow-ups by separating lightweight conversation context from search slots.
 - Keep Python standalone and TravelWeb MSSQL data paths clearly separated.
 
 ## Batch 1 — Cleanup And Correctness
@@ -140,7 +142,30 @@ Last updated: 2026-04-26
   - no large TravelWeb refactor
   - no model training
 
-## Batch 6 — Component Health Reporting
+## Batch 6 — Conversation Context Memory
+
+- Status: Completed
+- Purpose:
+  - remember basic recent context such as destination/topic without writing FAQ data into business search slots
+  - improve multi-turn UX for FAQ -> search and missing-info -> slot-completion flows
+- Files touched:
+  - `pipelines/tour_pipeline.py`
+  - `tests/test_pipeline_sessions.py`
+  - docs/project memory
+- Result:
+  - added `conversation_context` beside existing search session state
+  - FAQ turns can store `last_location` and `last_topic` without mutating `location/time/price`
+  - explicit search follow-ups can seed missing location from recent FAQ context
+  - FAQ follow-ups with season/time phrasing stay in FAQ mode
+  - search-request phrases like `Tôi muốn đi...` override FAQ follow-up mode
+  - FAQ metadata ranking now boosts season/month matches to avoid wrong season answers
+  - Playwright UI verified FAQ -> search, FAQ -> FAQ follow-up, and missing-location completion
+- Non-goals:
+  - no durable memory/profile system
+  - no Redis/session externalization
+  - no LLM-based routing
+
+## Batch 7 — Component Health Reporting
 
 - Status: Next recommended batch
 - Purpose:
@@ -158,7 +183,7 @@ Last updated: 2026-04-26
   - no external monitoring stack
   - no startup hard-fail for optional Gemini
 
-## Batch 7 — TravelWeb Contract Verification
+## Batch 8 — TravelWeb Contract Verification
 
 - Purpose:
   - keep verifying how the Express backend and React UI consume `ChatResponse`
@@ -177,7 +202,7 @@ Last updated: 2026-04-26
 - Non-goals:
   - no guessed MSSQL integration without the actual repo
 
-## Batch 8 — Repository Readiness And Richer Fixtures
+## Batch 9 — Repository Readiness And Richer Fixtures
 
 - Purpose:
   - reduce the gap between current JSON adapter behavior and realistic search scenarios
@@ -200,7 +225,7 @@ Last updated: 2026-04-26
   - no guessed DB integration
   - no FAQ model change yet
 
-## Batch 9 — Python Real Repository Adapter If Needed
+## Batch 10 — Python Real Repository Adapter If Needed
 
 - Trigger:
   - Python backend must query a real source directly instead of letting TravelWeb own DB truth
@@ -228,10 +253,11 @@ These matter, but they are not all actionable in the current repo state.
 
 ## Immediate Success Check
 
-After batch 5, the repo should be in this state:
+After batch 6, the repo should be in this state:
 
 - partial-search behavior remains stable
 - knowledge routing and price guards remain stable
+- lightweight conversation context improves follow-up UX without polluting search slots
 - `/health` exposes component state without slowing normal startup
 - repository contract is still clean
 

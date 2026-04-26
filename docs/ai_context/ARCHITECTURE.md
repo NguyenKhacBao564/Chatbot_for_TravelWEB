@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-04-23
+Last updated: 2026-04-26
 
 ## Quick Scan
 
@@ -8,12 +8,13 @@ Last updated: 2026-04-23
 - Gemini is phrasing-only.
 - Deterministic business logic lives in `services/tour_search_service.py`.
 - Tour data access is abstracted behind `repositories/tour_repository.py`.
+- Search slots and lightweight conversation context are intentionally separate.
 - Main technical debt: orchestration is centralized in one pipeline class.
 
 ## Runtime Flow
 
 1. `server.py` receives `POST /chat` with `query` and `user_id`.
-2. `TourRetrievalPipeline.get_tour_response()` classifies intent.
+2. `TourRetrievalPipeline.get_tour_response()` checks FAQ/search routing with the current per-user session/context.
 3. Pipeline extracts entities from query + session:
    - location
    - time
@@ -25,6 +26,26 @@ Last updated: 2026-04-23
 8. If search ran with one optional filter missing, pipeline returns `status="partial_search"` and keeps the missing optional field in `missing_fields`.
 9. If search ran with all filters present, pipeline returns `status="success"` or `status="no_results"`.
 10. Pipeline returns `ChatResponse`.
+
+## Session And Context Policy
+
+- `search session` stores business slots only:
+  - `location`
+  - `time`
+  - `price`
+  - `search_history`
+- `conversation_context` stores lightweight recent context:
+  - `last_location`
+  - `last_time`
+  - `last_topic`
+  - `last_mode`
+  - `last_query`
+- FAQ/knowledge turns can update `conversation_context` but must not write directly to search slots.
+- Explicit search follow-ups can seed missing location from recent FAQ context.
+- FAQ follow-ups with season/time wording can stay in FAQ mode when the previous turn was FAQ.
+- If a FAQ/knowledge turn contains an explicit destination that differs from active search slots, the pipeline treats it as a topic switch and clears stale search slots while preserving the new `conversation_context`.
+- `/reset` clears both search slots and conversation context.
+- Terminal full-search outcomes clear search slots but preserve lightweight context for immediate follow-up UX.
 
 ## Layer Responsibilities
 
@@ -91,7 +112,8 @@ Not allowed:
   - per-process memory
   - no lock
   - no cleanup job
-- Session is intentionally preserved after `partial_search` and reset only after full `success`.
+- Search slots are intentionally preserved after `partial_search` and cleared after terminal full `success`/`no_results`.
+- Conversation context is a local UX aid, not a durable memory system.
 - Destination normalization is hardcoded and narrow.
 - `extract_location()` only returns the first detected location and does not distinguish departure vs destination.
 - FAQ threshold is still a hardcoded constant in `RetrievalPipeline`.

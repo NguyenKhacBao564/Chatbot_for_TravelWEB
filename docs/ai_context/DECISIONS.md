@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-04-24
+Last updated: 2026-04-26
 
 ## Quick Scan
 
@@ -9,6 +9,7 @@ Last updated: 2026-04-24
 - Repository boundary stays even before real DB integration exists.
 - Graceful degradation is accepted for local dev/test.
 - Knowledge/FAQ-like queries are guarded before tour-search session mutation.
+- Conversation context is separate from business search slots.
 - Some decisions are explicitly temporary and should not be treated as final architecture.
 
 ## D-001 Hybrid NLP + Deterministic Search
@@ -141,6 +142,21 @@ Last updated: 2026-04-24
   - less chance that a clarification prompt sounds like a failed search
   - Gemini is still available for FAQ rephrasing and search intro phrasing
 
+## D-013 Separate Conversation Context From Search Slots
+
+- Status: Accepted and executed
+- Context: FAQ turns like `Đà Lạt nên đi vào tháng mấy` should help later follow-up search, but must not pollute business search slots the way earlier FAQ/session bugs did.
+- Choice:
+  - keep `location/time/price` as search slots only
+  - add lightweight `conversation_context` for `last_location`, `last_topic`, `last_mode`, and related follow-up hints
+  - allow explicit search follow-ups to reuse recent FAQ location
+  - keep FAQ follow-ups in FAQ mode when they do not contain search-request language
+  - clear stale search slots when an explicit FAQ destination switches away from the active search destination
+- Consequences:
+  - multi-turn UX is better without reintroducing FAQ-to-search pollution
+  - routing policy is more nuanced and needs regression tests
+  - context remains in-memory and is not production-grade durable memory
+
 ## Open Decisions
 
 - Real tour data integration path:
@@ -154,6 +170,7 @@ Last updated: 2026-04-24
 - Session state:
   - keep in-memory for local only
   - move to Redis/shared store for multi-worker usage
+- Whether TravelWeb clear-chat should call Python `/reset` to clear backend context as well as frontend messages
 
 ## Read This Next
 

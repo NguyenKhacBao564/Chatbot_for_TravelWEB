@@ -6,6 +6,7 @@ Last updated: 2026-04-26
 
 - Cleanup and partial-search batches are done.
 - TravelWeb now has MSSQL demo tour data for chatbot testing.
+- Lightweight conversation context is implemented and verified in UI.
 - Strategic choice now is whether Python should stay orchestration-only for TravelWeb or gain its own direct DB adapter.
 - Evaluation is the next quality gate once repository readiness is better.
 
@@ -38,6 +39,7 @@ Last updated: 2026-04-26
   - `faq` and `missing_info` never trigger DB queries
   - `partial_search`, `success`, and `no_results` are rendered consistently
   - DB query uses display `location` correctly and handles `price_min` vs `price_max`
+  - clear-chat UX either calls Python `/reset` or intentionally documents that it only clears frontend messages
 
 ### 3. Repository Readiness And Richer Python Fixtures
 

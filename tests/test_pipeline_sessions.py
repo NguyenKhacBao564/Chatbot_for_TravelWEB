@@ -46,6 +46,15 @@ class FakeTourRepository:
                 price=4590000,
                 url="/tour/tour_phuquoc_december",
             ),
+            Tour(
+                id="tour_hue_may",
+                name="Huế tháng 5",
+                destination="Huế",
+                destination_normalized="hue",
+                departure_date=date(2026, 5, 15),
+                price=4100000,
+                url="/tour/tour_hue_may",
+            ),
         ]
 
 
@@ -140,6 +149,167 @@ def test_knowledge_turn_does_not_seed_later_budget_search():
     assert second["tours"] == []
     assert second["entities"]["destination_normalized"] is None
     assert second["entities"]["price_max"] == 3000000
+
+
+def test_faq_location_context_seeds_explicit_tour_followup():
+    pipeline = build_pipeline()
+
+    first = pipeline.get_tour_response("Đà Lạt nên đi vào tháng mấy", user_id="user_faq_to_search")
+    session_after_faq = pipeline.session_manager.get_session("user_faq_to_search")
+    location_after_faq = session_after_faq["location"]
+    context_location_after_faq = session_after_faq["conversation_context"]["last_location"]
+    second = pipeline.get_tour_response(
+        "Có tour nào vào tháng 12 năm 2026 không",
+        user_id="user_faq_to_search",
+    )
+
+    assert first["status"] == "faq"
+    assert location_after_faq is None
+    assert context_location_after_faq == "Đà Lạt"
+
+    assert second["status"] == "partial_search"
+    assert second["entities"]["destination_normalized"] == "da-lat"
+    assert second["entities"]["date_start"] == "2026-12-01"
+    assert second["missing_fields"] == ["price"]
+    assert second["tours"][0]["id"] == "tour_dalat_december"
+
+
+def test_faq_followup_with_time_keeps_knowledge_mode(monkeypatch):
+    pipeline = build_pipeline_with_faq_metadata(
+        [
+            {
+                "question": "Đi Đà Lạt vào mùa hè có cần mang áo ấm không?",
+                "answer": "Mùa hè Đà Lạt vẫn se lạnh vào buổi tối, nên mang áo khoác mỏng.",
+                "tags": ["clothing"],
+            }
+        ]
+    )
+    monkeypatch.setattr(tour_pipeline, "get_genai_response", lambda prompt, fallback=None: fallback)
+
+    first = pipeline.get_tour_response(
+        "đi đà lạt vào tháng 5 thì nên mặc gì",
+        user_id="user_clothing_followup",
+    )
+    second = pipeline.get_tour_response(
+        "nhưng tháng 5 là mùa hè mà",
+        user_id="user_clothing_followup",
+    )
+
+    assert first["status"] == "faq"
+    assert second["status"] == "faq"
+    assert "áo khoác mỏng" in second["message"]
+    assert second["tours"] == []
+
+    session = pipeline.session_manager.get_session("user_clothing_followup")
+    assert session["location"] is None
+    assert session["time"] is None
+    assert session["price"] is None
+    assert session["search_history"] == []
+    assert session["conversation_context"]["last_mode"] == "faq"
+
+
+def test_search_request_after_faq_does_not_stay_in_knowledge_mode(monkeypatch):
+    pipeline = build_pipeline_with_faq_metadata(
+        [
+            {
+                "question": "Đi Đà Lạt vào mùa hè có cần mang áo ấm không?",
+                "answer": "Mùa hè Đà Lạt vẫn se lạnh vào buổi tối, nên mang áo khoác mỏng.",
+                "tags": ["clothing"],
+            }
+        ]
+    )
+    monkeypatch.setattr(tour_pipeline, "get_genai_response", lambda prompt, fallback=None: fallback)
+
+    first = pipeline.get_tour_response(
+        "đi đà lạt vào tháng 5 thì nên mặc gì",
+        user_id="user_faq_to_missing_location",
+    )
+    second = pipeline.get_tour_response(
+        "Tôi muốn đi tháng 12 năm 2026",
+        user_id="user_faq_to_missing_location",
+    )
+    third = pipeline.get_tour_response("khoảng 5 triệu", user_id="user_faq_to_missing_location")
+
+    assert first["status"] == "faq"
+    assert second["status"] == "partial_search"
+    assert second["missing_fields"] == ["price"]
+    assert second["entities"]["destination_normalized"] == "da-lat"
+    assert second["entities"]["date_start"] == "2026-12-01"
+    assert third["status"] == "success"
+    assert third["entities"]["price_max"] == 5000000
+
+
+def test_faq_location_switch_clears_stale_search_slots():
+    pipeline = build_pipeline()
+
+    first = pipeline.get_tour_response(
+        "Đà Lạt nên đi vào tháng mấy",
+        user_id="user_context_location_switch",
+    )
+    second = pipeline.get_tour_response(
+        "Có tour nào vào tháng 5 năm 2026 không",
+        user_id="user_context_location_switch",
+    )
+    third = pipeline.get_tour_response(
+        "Huế có món gì ngon",
+        user_id="user_context_location_switch",
+    )
+    session_after_hue_faq = pipeline.session_manager.get_session("user_context_location_switch")
+    location_after_hue_faq = session_after_hue_faq["location"]
+    time_after_hue_faq = session_after_hue_faq["time"]
+    context_after_hue_faq = dict(session_after_hue_faq["conversation_context"])
+    fourth = pipeline.get_tour_response(
+        "có tour nào vào tháng 5 năm 2026 không",
+        user_id="user_context_location_switch",
+    )
+
+    assert first["status"] == "faq"
+    assert second["status"] == "partial_search"
+    assert second["entities"]["destination_normalized"] == "da-lat"
+    assert third["status"] == "faq"
+    assert location_after_hue_faq is None
+    assert time_after_hue_faq is None
+    assert context_after_hue_faq["last_location"] == "Huế"
+    assert context_after_hue_faq["last_time"] is None
+
+    assert fourth["status"] == "partial_search"
+    assert fourth["entities"]["destination_normalized"] == "hue"
+    assert fourth["entities"]["date_start"] == "2026-05-01"
+    assert fourth["tours"][0]["id"] == "tour_hue_may"
+
+
+def test_location_reply_completes_active_missing_location_search():
+    pipeline = build_pipeline()
+
+    first = pipeline.get_tour_response(
+        "Tôi muốn đi tháng 12 năm 2026",
+        user_id="user_location_completion",
+    )
+    second = pipeline.get_tour_response("Đà Lạt", user_id="user_location_completion")
+
+    assert first["status"] == "missing_info"
+    assert first["missing_fields"] == ["location"]
+    assert second["status"] == "partial_search"
+    assert second["entities"]["destination_normalized"] == "da-lat"
+    assert second["entities"]["date_start"] == "2026-12-01"
+    assert second["missing_fields"] == ["price"]
+
+
+def test_reset_session_clears_conversation_context():
+    pipeline = build_pipeline()
+
+    pipeline.get_tour_response("Đà Lạt nên đi vào tháng mấy", user_id="user_reset_context")
+    assert (
+        pipeline.session_manager.get_session("user_reset_context")["conversation_context"]["last_location"]
+        == "Đà Lạt"
+    )
+
+    pipeline.reset_session("user_reset_context")
+
+    session = pipeline.session_manager.get_session("user_reset_context")
+    assert session["location"] is None
+    assert session["conversation_context"]["last_location"] is None
+    assert session["conversation_context"]["last_mode"] is None
 
 
 def test_explicit_tour_query_with_food_words_still_uses_search_flow():

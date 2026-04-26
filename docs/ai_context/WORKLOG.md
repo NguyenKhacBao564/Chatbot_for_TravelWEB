@@ -240,6 +240,77 @@ Last updated: 2026-04-26
 - Next exact step:
   - implement `/health` component readiness reporting in Python backend
 
+## 2026-04-26 - Context location switch fix
+
+- Session goal:
+  - fix stale tour-search slots when user switches FAQ context from one destination to another
+- Main changes:
+  - when a FAQ/knowledge turn contains an explicit destination different from the active search slot, clear stale search slots
+  - keep the newer `conversation_context.last_location` so the next explicit tour follow-up uses the new destination
+  - added a regression test for Đà Lạt search context -> Huế food FAQ -> Huế tour follow-up
+- Files changed:
+  - `pipelines/tour_pipeline.py`
+  - `tests/test_pipeline_sessions.py`
+  - `docs/ai_context/ARCHITECTURE.md`
+  - `docs/ai_context/DECISIONS.md`
+  - `docs/ai_context/WORKLOG.md`
+- Tests added/updated:
+  - `test_faq_location_switch_clears_stale_search_slots`
+- Verification:
+  - `python -m pytest tests/test_pipeline_sessions.py -q` -> 33 passed
+  - `python -m pytest -q` -> 52 passed
+  - direct `/chat` API verified the final follow-up uses `destination_normalized="hue"`
+  - Playwright UI verified the final follow-up renders Huế tour cards, not Đà Lạt cards
+- Blockers / caveats:
+  - context remains in-memory only
+  - broader topic-switch policy may need more cases after real user testing
+- Next exact step:
+  - implement `/health` component readiness reporting in Python backend
+
+## 2026-04-26 - Conversation context memory for multi-turn UX
+
+- Session goal:
+  - remember basic recent context for follow-up questions without reintroducing FAQ-to-search session pollution
+- Main changes:
+  - added separate `conversation_context` beside search slots in `SessionManager`
+  - kept FAQ-derived destination/topic out of `location/time/price` business slots
+  - allowed explicit search follow-ups to reuse recent FAQ location
+  - kept FAQ follow-ups with season/time language in FAQ mode
+  - made search-request phrases like `Tôi muốn đi...` override FAQ follow-up mode
+  - boosted FAQ metadata ranking for season/month matches
+  - removed stale `ampfeedback.md` after its useful findings had already been absorbed into project memory docs
+- Files changed:
+  - `pipelines/tour_pipeline.py`
+  - `tests/test_pipeline_sessions.py`
+  - `README.md`
+  - `docs/ai_context/PROJECT_STATE.md`
+  - `docs/ai_context/ARCHITECTURE.md`
+  - `docs/ai_context/DECISIONS.md`
+  - `docs/ai_context/ROADMAP.md`
+  - `docs/ai_context/EXECUTION_PLAN.md`
+  - `docs/ai_context/WORKLOG.md`
+  - `ampfeedback.md`
+- Tests added/updated:
+  - FAQ location context seeds explicit tour follow-up
+  - FAQ time/season follow-up stays in knowledge mode
+  - search request after FAQ does not stay in knowledge mode
+  - bare location reply completes active missing-location search
+  - reset clears conversation context
+- Verification:
+  - `python -m pytest tests/test_pipeline_sessions.py -q` -> 32 passed
+  - `python -m pytest -q` -> 51 passed
+  - direct `/chat` API verified FAQ -> search and FAQ -> FAQ follow-up behavior
+  - Playwright UI on `http://localhost:3000` verified:
+    - `Đà Lạt nên đi vào tháng mấy` then `Có tour nào vào tháng 12 năm 2026 không` returns Đà Lạt tour cards
+    - `đi đà lạt vào tháng 5 thì nên mặc gì` then `nhưng tháng 5 là mùa hè mà` stays FAQ and returns summer clothing guidance
+    - `Tôi muốn đi tháng 12 năm 2026` then `Đà Lạt` returns Đà Lạt tour cards
+- Blockers / caveats:
+  - context is in-memory only and not shared across workers
+  - TravelWeb clear-chat button appears to clear UI messages; backend reset behavior should be verified in TravelWeb contract batch
+  - homepage still logs unauthenticated `401 /auth/user` when not logged in; it did not affect chatbot flow
+- Next exact step:
+  - implement `/health` component readiness reporting in Python backend
+
 ## Read This Next
 
 1. `EXECUTION_PLAN.md`
