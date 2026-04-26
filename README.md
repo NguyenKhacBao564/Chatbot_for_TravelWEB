@@ -2,6 +2,12 @@
 
 Backend chatbot tư vấn du lịch tiếng Việt. Dự án giữ ý tưởng NLP pipeline hiện có gồm intent classification, entity extraction, FAQ retrieval bằng FAISS và Gemini để diễn đạt tự nhiên, đồng thời bổ sung business search layer để tìm tour thật từ data source có cấu trúc.
 
+## Demo Video
+
+[![Vietnamese Travel Chatbot Demo](https://img.youtube.com/vi/zIMK7rzwRk/maxresdefault.jpg)](https://youtu.be/-zIMK7rzwRk)
+
+Watch demo: https://youtu.be/-zIMK7rzwRk
+
 ## Kiến Trúc Sau Refactor
 
 ```mermaid
