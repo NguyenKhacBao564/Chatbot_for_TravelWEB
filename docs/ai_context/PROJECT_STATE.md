@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-04-25
+Last updated: 2026-04-26
 
 ## Quick Scan
 
@@ -8,7 +8,8 @@ Last updated: 2026-04-25
 - Direction is still correct: hybrid NLP + deterministic business search.
 - API entrypoints today: `GET /health`, `POST /chat`, `POST /reset`.
 - Main runtime path: `server.py` -> `TourRetrievalPipeline` -> structured `ChatResponse`.
-- Tour search works, but only against a JSON adapter with 6 sample tours.
+- Python standalone tour search still uses a JSON adapter with 6 sample tours.
+- TravelWeb UI search now uses MSSQL seeded demo data for Đà Lạt, Phú Yên, Huế.
 - Search now runs with `location + time`, `location + price`, or all three filters.
 - FAQ-like knowledge/service queries are guarded before search/session mutation.
 - FAQ retrieval is separate from tour search and uses metadata keyword scoring before FAISS fallback.
@@ -38,15 +39,24 @@ Last updated: 2026-04-25
   - examples like `Hà Nội có những quán cà phê...`, `Tour có wifi...`, `Trẻ em dưới 5 tuổi...` do not enter tour search
   - explicit tour queries with food words still enter tour-search flow
 - Price extraction no longer treats short non-money quantities like ages, people counts, or day counts as budgets.
+- Price extraction no longer treats the year before `trên` as a money unit, e.g. `năm 2026 trên 5tr`.
 - Full `no_results` now resets session state.
 - `missing_info` messages are deterministic and do not call Gemini.
 - FAQ retrieval with metadata when FAISS stack is available.
+- TravelWeb integration:
+  - maps chatbot entities into MSSQL filters
+  - prioritizes display `location` over slug `destination_normalized` for DB matching
+  - returns DB tour cards in the React chatbot UI
+- TravelWeb MSSQL demo data:
+  - existing broad future-tour seed: `sql_future_tours_2026_2027.sql`
+  - focused demo seed: `sql_chatbot_demo_tours_dalat_phuyen_hue.sql`
+  - 36 focused demo tours, 12 each for Đà Lạt, Phú Yên, Huế
 - Test suite covering API smoke, validation, parsers, reset flow, partial search flows, session isolation, and multi-turn search progression.
 
 ## What Is Fallback / Mock / Adapter
 
 - `JsonTourRepository` backed by `data/tours_sample.json`
-  - this is not the website database
+  - this is Python standalone data, not the TravelWeb MSSQL database
   - current sample size is 6 tours only
 - Gemini
   - phrasing only
@@ -73,17 +83,18 @@ Last updated: 2026-04-25
 - FAQ retrieval still uses:
   - a fixed threshold
   - deterministic metadata scoring plus a multilingual embedding fallback
-- TravelWeb UI was manually verified for this batch, but its real MSSQL data may still produce `no_results` even when Python's sample repository finds tours.
+- TravelWeb and Python still have separate tour data paths:
+  - Python standalone uses `data/tours_sample.json`
+  - TravelWeb UI uses MSSQL through Express
+- TravelWeb repo in this workspace has a broken Git HEAD, so file tracking/commit status there cannot be trusted without fixing that repo metadata.
 
 ## Current Engineering Focus
 
-- Strategic priority:
-  - replace the JSON adapter with a real website repository when concrete DB/API details are available
-- Practical next batch in this repo:
+- Practical next batch:
   - improve `/health` into component health/readiness reporting
-  - keep repository readiness work separate from guessed DB integration
-  - add better evaluation coverage for search and retrieval quality
-  - expand destination normalization beyond the current alias map
+  - keep TravelWeb/Python response contract tests current
+  - add evaluation coverage for search and retrieval quality
+  - decide whether Python standalone should keep JSON-only mode or gain a real DB repository adapter
 
 ## Read This Next
 

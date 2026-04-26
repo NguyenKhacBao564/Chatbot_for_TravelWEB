@@ -175,13 +175,20 @@ curl -X POST http://localhost:8000/chat \
 
 ## Nguồn Dữ Liệu Tour
 
-Repo hiện không có cơ chế database/web-app data access thật. Vì vậy refactor hiện dùng adapter:
+Khi chạy riêng Python backend, repo hiện dùng adapter nội bộ:
 
 - `repositories/tour_repository.py`
 - `data/tours_sample.json`
 - biến môi trường `TOUR_DATA_FILE`
 
-Khi có database thật của website, tạo repository mới implement method `list_tours()` và trả về danh sách `Tour`. `TourSearchService` và `TourRetrievalPipeline` không cần đổi nếu repository mới giữ cùng contract.
+Khi chạy qua TravelWeb, Python chatbot trả `entities/status/message`, còn TravelWeb Express backend query MSSQL để lấy tour thật. Demo DB hiện có seed tập trung cho Đà Lạt, Phú Yên, Huế tại:
+
+- `/Users/nguyen_bao/Documents/PTIT/Junior_2/cnpm/tour-booking-web/sql_future_tours_2026_2027.sql`
+- `/Users/nguyen_bao/Documents/PTIT/Junior_2/cnpm/tour-booking-web/sql_chatbot_demo_tours_dalat_phuyen_hue.sql`
+
+Seed demo thứ hai thêm 36 tour idempotent, 12 tour/tỉnh, phủ nhiều tháng năm 2026-2027 và nhiều mức giá dưới/trên 5 triệu. TravelWeb adapter phải ưu tiên `location` tiếng Việt để query MSSQL; `destination_normalized` chỉ là slug metadata/fallback.
+
+Nếu muốn Python backend tự kết nối database thật, tạo repository mới implement method `list_tours()` và trả về danh sách `Tour`. `TourSearchService` và `TourRetrievalPipeline` không cần đổi nếu repository mới giữ cùng contract.
 
 Schema tour tối thiểu:
 
@@ -226,7 +233,10 @@ Dữ liệu chính:
 - `data/processed/faq_cleaned.json`: FAQ đã xử lý.
 - `faq_metadata.json`: metadata cho FAQ retrieval.
 - `data/processed/intent_merged.json`: dữ liệu train intent.
-- `data/tours_sample.json`: tour mẫu cho repository adapter hiện tại.
+- `data/tours_sample.json`: tour mẫu cho repository adapter Python standalone.
+- TravelWeb MSSQL demo seed:
+  - `sql_future_tours_2026_2027.sql`
+  - `sql_chatbot_demo_tours_dalat_phuyen_hue.sql`
 
 ## Test
 
@@ -239,6 +249,7 @@ Test hiện bao phủ:
 - API smoke test cho `/health` và `/chat`.
 - Parser thời gian.
 - Parser giá, bao gồm guard chống nhận nhầm số tuổi/số người/số ngày thành ngân sách.
+- Parser giá, bao gồm guard chống nhận nhầm năm trong cụm `năm 2026 trên 5tr` thành `2026tr`.
 - Tour search deterministic.
 - Partial search với `location + time`, `location + price`, và no-results.
 - FAQ routing/session guard cho các câu như `Hà Nội có quán cà phê...`, `Tour có wifi...`, `Trẻ em dưới 5 tuổi...`.

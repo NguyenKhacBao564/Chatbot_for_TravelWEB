@@ -1,13 +1,14 @@
 # Dataset And Models
 
-Last updated: 2026-04-23
+Last updated: 2026-04-26
 
 ## Quick Scan
 
 - Intent dataset: `data/processed/intent_merged.json` with 11,904 samples.
 - FAQ dataset: `data/processed/faq_cleaned.json` with 3,504 entries.
 - FAQ runtime metadata: `faq_metadata.json` with 3,504 entries.
-- Tour runtime data in repo: `data/tours_sample.json` with 6 sample tours.
+- Tour runtime data in Python repo: `data/tours_sample.json` with 6 sample tours.
+- Tour runtime data in TravelWeb demo: MSSQL seeded with focused Đà Lạt/Phú Yên/Huế tours.
 - Main runtime models:
   - PhoBERT for intent
   - `all-MiniLM-L6-v2` for FAQ retrieval
@@ -66,7 +67,26 @@ What this means:
 
 - enough to prove the business-search shape
 - not enough to judge ranking quality
-- not a substitute for real website integration
+- not a substitute for TravelWeb MSSQL integration
+
+TravelWeb demo source:
+
+- DB: MSSQL behind TravelWeb Express backend.
+- Existing broad seed: `tour-booking-web/sql_future_tours_2026_2027.sql`
+- Focused chatbot demo seed: `tour-booking-web/sql_chatbot_demo_tours_dalat_phuyen_hue.sql`
+- Focused coverage:
+  - 36 tours total
+  - 12 tours for Đà Lạt
+  - 12 tours for Phú Yên
+  - 12 tours for Huế
+  - date range: May 2026 through December 2027
+  - varied adult prices below and above 5 million VND
+
+Important integration note:
+
+- Python emits both `location` and `destination_normalized`.
+- TravelWeb MSSQL stores Vietnamese destination names like `Đà Lạt`, not slugs like `da-lat`.
+- Express search should use display `location` for DB `LIKE` matching and keep slug as metadata/fallback only.
 
 ## Runtime Artifacts
 
@@ -102,6 +122,7 @@ Fallback behavior:
   - deterministic and testable
   - returns a single main value in extractor API
   - now returns real `None` on miss in the main flow
+  - guarded against parsing `2026 tr` from phrases like `năm 2026 trên 5tr`
 - Normalization:
   - alias map is small and hardcoded
   - no fuzzy matching yet
@@ -111,4 +132,3 @@ Fallback behavior:
 1. `DECISIONS.md`
 2. `ROADMAP.md`
 3. `EXECUTION_PLAN.md`
-

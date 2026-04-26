@@ -1,6 +1,6 @@
 # Execution Plan
 
-Last updated: 2026-04-25
+Last updated: 2026-04-26
 
 ## Quick Scan
 
@@ -9,15 +9,17 @@ Last updated: 2026-04-25
 - Batch 2 partial search is complete.
 - Batch 3 routing/session guard is complete.
 - Batch 4 FAQ routing hardening and price false-positive fix is complete.
+- Batch 5 TravelWeb demo data and contract fixes are complete.
 - Scope: next 1-2 implementation batches only.
-- Non-goal: no full rewrite, no real DB integration in this sprint, no LLM-driven search logic.
+- Non-goal: no full rewrite, no LLM-driven search logic.
 
 ## Sprint Goal
 
-- Make the current runtime more useful before real DB integration lands.
+- Make the current runtime more useful with deterministic search and real TravelWeb demo data.
 - Keep cleanup gains from batch 1 stable.
 - Keep partial search stable.
 - Stop knowledge/FAQ-like queries and non-money quantities from polluting tour-search session state.
+- Keep Python standalone and TravelWeb MSSQL data paths clearly separated.
 
 ## Batch 1 — Cleanup And Correctness
 
@@ -111,7 +113,34 @@ Last updated: 2026-04-25
   - no real DB integration
   - no FAQ embedding replacement
 
-## Batch 5 — Component Health Reporting
+## Batch 5 — TravelWeb Demo Data And Contract Fixes
+
+- Status: Completed
+- Purpose:
+  - make chatbot demos return real TravelWeb DB tours instead of frequent `no_results`
+  - fix contract mismatches between Python entities and TravelWeb MSSQL filters
+- Files touched:
+  - TravelWeb `sql_chatbot_demo_tours_dalat_phuyen_hue.sql`
+  - TravelWeb `backend/services/chatTourSearchService.js`
+  - TravelWeb `backend/services/chatResponseMapper.js`
+  - TravelWeb `backend/tests/chatIntegration.test.js`
+  - Python `extractors/extract_price.py`
+  - Python `tests/test_extract_price.py`
+  - docs/project memory
+- Result:
+  - added 36 focused idempotent demo tours to MSSQL
+  - coverage is 12 tours each for Đà Lạt, Phú Yên, Huế
+  - TravelWeb DB matching now uses Vietnamese `location` before slug `destination_normalized`
+  - `price_min`-only filters no longer become exact price filters in Express
+  - price extractor no longer parses `năm 2026 trên 5tr` as `2026tr`
+  - partial-search messages now reflect DB results when DB returns tours
+  - Playwright UI verified tour cards for Đà Lạt under 5tr, Đà Lạt over 5tr, and Huế partial search
+- Non-goals:
+  - no Python direct MSSQL repository adapter
+  - no large TravelWeb refactor
+  - no model training
+
+## Batch 6 — Component Health Reporting
 
 - Status: Next recommended batch
 - Purpose:
@@ -129,10 +158,10 @@ Last updated: 2026-04-25
   - no external monitoring stack
   - no startup hard-fail for optional Gemini
 
-## Batch 6 — TravelWeb Contract Verification
+## Batch 7 — TravelWeb Contract Verification
 
 - Purpose:
-  - verify how the Express backend and React UI consume `ChatResponse`
+  - keep verifying how the Express backend and React UI consume `ChatResponse`
 - Trigger:
   - TravelWeb repo is available in the workspace
 - Likely files to inspect/touch:
@@ -144,10 +173,11 @@ Last updated: 2026-04-25
   - `faq` and `missing_info` do not trigger tour DB queries
   - `partial_search`, `success`, and `no_results` are rendered distinctly
   - DB query/filter mapping from `entities` is explicit and tested
+  - no stale Python message contradicts DB tour results
 - Non-goals:
   - no guessed MSSQL integration without the actual repo
 
-## Batch 7 — Repository Readiness And Richer Fixtures
+## Batch 8 — Repository Readiness And Richer Fixtures
 
 - Purpose:
   - reduce the gap between current JSON adapter behavior and realistic search scenarios
@@ -170,12 +200,12 @@ Last updated: 2026-04-25
   - no guessed DB integration
   - no FAQ model change yet
 
-## Batch 8 — Real Repository Integration When Source Details Exist
+## Batch 9 — Python Real Repository Adapter If Needed
 
 - Trigger:
-  - concrete website DB or API access details are available
+  - Python backend must query a real source directly instead of letting TravelWeb own DB truth
 - Purpose:
-  - replace or complement `JsonTourRepository` with a real adapter
+  - replace or complement `JsonTourRepository` with a real adapter only if product architecture needs it
 - Likely files to touch:
   - `repositories/tour_repository.py` or a new repository adapter module
   - integration tests

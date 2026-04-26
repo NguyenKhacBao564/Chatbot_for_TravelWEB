@@ -1,6 +1,6 @@
 # Worklog
 
-Last updated: 2026-04-25
+Last updated: 2026-04-26
 
 ## Quick Scan
 
@@ -195,6 +195,50 @@ Last updated: 2026-04-25
   - `/health` still only returns a shallow status
 - Next exact step:
   - implement component health/readiness reporting for `/health`
+
+## 2026-04-26 - TravelWeb demo tour data and DB contract fixes
+
+- Session goal:
+  - add enough real MSSQL tour data for chatbot demos
+  - verify the real TravelWeb UI returns tour cards instead of false `no_results`
+- Main changes:
+  - added an idempotent TravelWeb SQL seed with 36 focused demo tours
+  - seeded 12 tours each for Đà Lạt, Phú Yên, Huế across 2026-2027
+  - fixed TravelWeb DB matching to prefer Vietnamese `location` over slug `destination_normalized`
+  - fixed Express price mapping so `price_min`-only filters do not become exact-price filters
+  - fixed Python price extractor so `năm 2026 trên 5tr` does not parse as `2026tr`
+  - changed partial-search message mapping so DB results are not paired with stale no-results text
+- Files changed:
+  - `/Users/nguyen_bao/Documents/PTIT/Junior_2/cnpm/tour-booking-web/sql_chatbot_demo_tours_dalat_phuyen_hue.sql`
+  - `/Users/nguyen_bao/Documents/PTIT/Junior_2/cnpm/tour-booking-web/backend/services/chatTourSearchService.js`
+  - `/Users/nguyen_bao/Documents/PTIT/Junior_2/cnpm/tour-booking-web/backend/services/chatResponseMapper.js`
+  - `/Users/nguyen_bao/Documents/PTIT/Junior_2/cnpm/tour-booking-web/backend/tests/chatIntegration.test.js`
+  - `extractors/extract_price.py`
+  - `tests/test_extract_price.py`
+  - `README.md`
+  - `docs/ai_context/PROJECT_STATE.md`
+  - `docs/ai_context/DATASET_AND_MODELS.md`
+  - `docs/ai_context/ROADMAP.md`
+  - `docs/ai_context/EXECUTION_PLAN.md`
+  - `docs/ai_context/WORKLOG.md`
+- Tests added/updated:
+  - TravelWeb query builder prefers display location over slug
+  - TravelWeb maps known slugs when display location is absent
+  - TravelWeb preserves `price_min`-only filter semantics
+  - Python price parser rejects false `2026tr` from `năm 2026 trên 5tr`
+- Verification:
+  - applied `sql_chatbot_demo_tours_dalat_phuyen_hue.sql` to MSSQL successfully
+  - TravelWeb `npm test` -> 12 passed
+  - Python `python -m pytest tests/test_extract_price.py tests/test_pipeline_sessions.py -q` -> 35 passed
+  - Python `python -m pytest -q` -> 46 passed
+  - direct Express API returned tours for Đà Lạt dưới 5tr, Đà Lạt trên 5tr, Phú Yên 2027 dưới 5tr, and Huế partial search
+  - Playwright UI on `http://localhost:3000` showed tour cards for Đà Lạt dưới 5tr, Đà Lạt trên 5tr, and Huế partial search
+- Blockers / caveats:
+  - TravelWeb Git metadata is broken (`fatal: bad object HEAD`), so status/commit cannot be trusted there
+  - Python standalone still uses `data/tours_sample.json` with 6 tours
+  - console shows expected unauthenticated `401 /auth/user` on homepage when not logged in; it did not affect chatbot search
+- Next exact step:
+  - implement `/health` component readiness reporting in Python backend
 
 ## Read This Next
 

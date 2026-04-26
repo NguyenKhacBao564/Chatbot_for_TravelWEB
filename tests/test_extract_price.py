@@ -29,3 +29,8 @@ def test_extract_price_ignores_age_people_and_duration_counts():
     assert extract_price_vn("Trẻ em dưới 5 tuổi có phải mua vé không?") is None
     assert extract_price_vn("Tôi đi 2 người") is None
     assert extract_price_vn("Tour 3 ngày có lịch trình thế nào?") is None
+
+
+def test_extract_price_does_not_treat_year_before_tren_as_million_unit():
+    assert extract_price_values("Tìm tour Đà Lạt tháng 5 năm 2026 trên 5tr") == [5000000]
+    assert extract_price_values("Tìm tour Đà Lạt tháng 5 năm 2026 dưới 5 triệu") == [5000000]

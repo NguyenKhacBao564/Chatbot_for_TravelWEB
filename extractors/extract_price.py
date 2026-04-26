@@ -61,7 +61,7 @@ def extract_price_values(query):
 
     patterns = [
         rf"({AMOUNT_PATTERN})\s*{CURRENCY_SUFFIX_PATTERN}",
-        rf"(\d+(?:[\.,]\d+)?\s*{MONEY_UNIT_PATTERN}\s*(?:rưỡi|nửa)?)",
+        rf"(\d+(?:[\.,]\d+)?\s*{MONEY_UNIT_PATTERN}\b\s*(?:rưỡi|nửa)?)",
         rf"{PRICE_CONTEXT_PATTERN}\s*(\d{{5,}})",
         r"(?<!\d)(\d{5,})(?!\d)",
     ]
